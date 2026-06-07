@@ -91,7 +91,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:
 .tag-amber{background:var(--amber-dim);color:var(--amber);}
 .tag-red{background:var(--red-dim);color:var(--red);}
 .tag-blue{background:var(--blue-dim);color:var(--blue);}
-.tag-purple{background:var(--purple-dim);color:var(--purple);}
 
 /* ── SL SLIDER ── */
 .sl-row{display:flex;align-items:center;gap:10px;margin:8px 0;}
@@ -144,7 +143,9 @@ input:focus,select:focus{border-color:var(--border2);}
 .ind-btn.on.ema20{color:#60a5fa;background:rgba(96,165,250,0.1);}
 .ind-btn.on.ema50{color:#f59e0b;background:rgba(245,158,11,0.1);}
 .ind-btn.on.ema200{color:#a78bfa;background:rgba(167,139,250,0.1);}
-.ind-btn.on.realized{color:#fb923c;background:rgba(251,146,60,0.1);}
+.tf-group {display:flex; gap:2px; background:var(--bg3); border-radius:4px; border:1px solid var(--border); padding:2px;}
+.tf-btn {background:transparent; border:none; color:var(--text3); font-family:var(--mono); font-size:.65rem; padding:4px 8px; border-radius:2px; cursor:pointer; transition:all var(--transition);}
+.tf-btn.on {background:var(--border2); color:var(--text);}
 #btc-chart{width:100%;height:420px;border-radius:var(--r);overflow:hidden;}
 .chart-label{font-family:var(--mono);font-size:.62rem;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em;}
 
@@ -296,15 +297,15 @@ input:focus,select:focus{border-color:var(--border2);}
     </div>
     <div class="rr-wrap">
       <div class="rr-card">
-        <div class="card-title">Escenarios de P&amp;L</div>
+        <div class="card-title">Curva de Supervivencia (Drawdown)</div>
         <div class="chart-container">
-          <canvas id="pnl-chart" role="img" aria-label="Gráfico de P&L por precio de BTC"></canvas>
+          <canvas id="survival-chart" role="img" aria-label="Curva de supervivencia de capital"></canvas>
         </div>
       </div>
       <div class="rr-card">
-        <div class="card-title">Ratio Riesgo/Beneficio</div>
+        <div class="card-title">Mapa de DCA (Distribución por Precio)</div>
         <div class="chart-container">
-          <canvas id="rr-chart" role="img" aria-label="Ratio riesgo beneficio"></canvas>
+          <canvas id="dca-map-chart" role="img" aria-label="Distribución de compras DCA"></canvas>
         </div>
       </div>
       <div class="rr-card">
@@ -323,13 +324,12 @@ input:focus,select:focus{border-color:var(--border2);}
         <button class="ind-btn on ema20" onclick="toggleInd('ema20',this)">EMA 20</button>
         <button class="ind-btn on ema50" onclick="toggleInd('ema50',this)">EMA 50</button>
         <button class="ind-btn on ema200" onclick="toggleInd('ema200',this)">EMA 200</button>
-        <button class="ind-btn on realized" onclick="toggleInd('realized',this)">Realized Price</button>
         <div style="flex:1;"></div>
-        <select id="tf-select" style="width:auto;font-size:.7rem;padding:4px 8px;background:var(--bg3);" onchange="changeTimeframe(this.value)">
-          <option value="1d">1D</option>
-          <option value="1w" selected>1W</option>
-          <option value="1M">1M</option>
-        </select>
+        <div class="tf-group">
+          <button class="tf-btn" onclick="changeTimeframe('1d', this)">1D</button>
+          <button class="tf-btn on" onclick="changeTimeframe('1w', this)">1W</button>
+          <button class="tf-btn" onclick="changeTimeframe('1M', this)">1M</button>
+        </div>
       </div>
       <div class="chart-label">BTC/USDT</div>
       <div id="btc-chart"></div>
@@ -452,12 +452,12 @@ let activeTab='trades';
 let editingId=null;
 let selectedCapitalType='existing';
 let btcOhlcv=[];
-let indicators={ema20:true,ema50:true,ema200:true,realized:true};
+let indicators={ema20:true,ema50:true,ema200:true};
 let currentTf='1w';
 
 // Chart Instances
 let lwChart=null, lwSeries={};
-let pnlChartInst=null, rrChartInst=null, tradesMixInst=null, capPieInst=null;
+let survInst=null, dcaInst=null, tradesMixInst=null, capPieInst=null;
 
 // ── AUTH ─────────────────────────────────────────────────────────────
 const errBox=document.getElementById('auth-error');
@@ -618,7 +618,7 @@ async function delCapital(id){
 function render(){
   const{cap,pos,avg,lev,liq,mUsed,mFree}=metrics();
   
-  // Renderizar gráficos siempre (si no hay datos muestran vacío)
+  // Renderizar gráficos siempre
   renderCapitalPie(mUsed, mFree);
   renderMiniCharts();
 
@@ -642,7 +642,6 @@ function render(){
     document.getElementById('m-btc').textContent=f(btcPrice);
     document.getElementById('m-btc-sub').textContent='Binance spot';
     
-    // Matemática a prueba de fallos si pos === 0
     const pnl = (pos > 0 && avg > 0) ? (btcPrice-avg)/avg*pos : 0;
     const pnlPct = cap > 0 ? (pnl/cap*100) : 0;
     
@@ -897,11 +896,13 @@ function calcEstrategia(){
     resProm.innerHTML=`Nueva posición necesaria: <strong>${f(newPos)}</strong><br>Capital a inyectar: <strong style="color:var(--green)">${f(newCap)} USDT a x${l}</strong><br>Nueva liquidación estimada: <strong style="color:var(--red)">${f(newLiq)}</strong>`;
   }
 
-  // Drawdown
-  const drop=parseFloat(document.getElementById('est-drop-px').value);
+  // Drawdown (Arreglado para permitir drop = 0)
+  const dropStr = document.getElementById('est-drop-px').value;
+  const drop = parseFloat(dropStr);
   const resSurv=document.getElementById('res-supervivencia');
+  
   if(pos===0){resSurv.innerHTML='Necesitas un trade abierto.';}
-  else if(!drop){resSurv.innerHTML='Esperando escenario de precio...';}
+  else if(dropStr === '' || isNaN(drop)){resSurv.innerHTML='Esperando escenario de precio...';}
   else if(drop>=avg){resSurv.innerHTML='<span style="color:var(--text3)">Ese precio no representa una caída desde el promedio.</span>';}
   else{
     const pnlDrop=(drop-avg)/avg*pos;
@@ -941,79 +942,88 @@ function calcEstrategia(){
 
 function destroyChart(c){if(c)try{c.destroy();}catch{}}
 
-// ── P&L + RISK/REWARD MINI CHARTS ────────────────────────────────────
+// ── UTIL / MINI CHARTS ────────────────────────────────────
 function renderMiniCharts(){
   const tabTrades=document.getElementById('tab-trades');
   if(!tabTrades||!tabTrades.classList.contains('active'))return;
   
   if(!trades.length){
-    destroyChart(pnlChartInst); destroyChart(rrChartInst); destroyChart(tradesMixInst);
-    pnlChartInst=null; rrChartInst=null; tradesMixInst=null;
+    destroyChart(survInst); destroyChart(dcaInst); destroyChart(tradesMixInst);
+    survInst=null; dcaInst=null; tradesMixInst=null;
     return;
   }
   const{cap,pos,avg,liq}=metrics();
-  if(pos===0)return; // Safe check
-  const ref=btcPrice||avg;
+  if(pos===0)return;
 
-  // 1. P&L chart
-  const pnlCtx=document.getElementById('pnl-chart').getContext('2d');
-  if(pnlChartInst)pnlChartInst.destroy();
-  const prices=[];const pnls=[];
-  for(let i=-30;i<=50;i+=2){
-    const px=avg*(1+i/100);
-    prices.push('$'+Math.round(px/1000)+'k');
-    pnls.push(parseFloat(((px-avg)/avg*pos).toFixed(0)));
+  // 1. SURVIVAL CURVE (Drawdown vs Capital Remanente)
+  const survCtx=document.getElementById('survival-chart').getContext('2d');
+  if(survInst)survInst.destroy();
+  const sPrices=[]; const sEquity=[];
+  // Vamos desde el promedio hasta la liquidación (o 0) dividiendo en 10 partes
+  const bottomPx = Math.max(0, liq - (avg * 0.05)); // Un poquito abajo de liquidación para ver el 0
+  const step = (avg - bottomPx) / 10;
+  
+  for(let i=0; i<=10; i++){
+    const p = avg - (step * i);
+    sPrices.push('$' + Math.round(p/1000) + 'k');
+    const pnl = ((p - avg) / avg) * pos;
+    const equity = Math.max(0, cap + pnl);
+    sEquity.push(parseFloat(equity.toFixed(0)));
   }
-  pnlChartInst=new Chart(pnlCtx,{
+  
+  survInst=new Chart(survCtx,{
     type:'line',
     data:{
-      labels:prices,
+      labels:sPrices,
       datasets:[{
-        label:'P&L (USDT)',data:pnls,
-        borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,0.08)',
-        pointRadius:0,borderWidth:1.5,fill:true,tension:0.1,
-        segment:{borderColor:ctx=>ctx.p0DataIndex>=15?'#4ade80':'#f87171',backgroundColor:ctx=>ctx.p0DataIndex>=15?'rgba(74,222,128,0.06)':'rgba(248,113,113,0.06)'}
+        label:'Capital Restante (USDT)', data:sEquity,
+        borderColor:'#fbbf24', backgroundColor:'rgba(251, 191, 36, 0.15)',
+        pointRadius:2, borderWidth:2, fill:true, tension:0.2
       }]
     },
     options:{
       responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'P&L: $'+c.raw.toLocaleString()}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Capital: $'+c.raw.toLocaleString()}}},
       scales:{
-        x:{ticks:{color:'#444',font:{family:'IBM Plex Mono',size:9},maxTicksLimit:8},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'rgba(255,255,255,0.1)'}},
-        y:{ticks:{color:'#444',font:{family:'IBM Plex Mono',size:9},callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'rgba(255,255,255,0.1)'}}
+        x:{ticks:{color:'#444',font:{family:'IBM Plex Mono',size:9}},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'rgba(255,255,255,0.1)'}},
+        y:{ticks:{color:'#444',font:{family:'IBM Plex Mono',size:9},callback:v=>'$'+v},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'rgba(255,255,255,0.1)'}}
       }
     }
   });
 
-  // 2. Risk/Reward chart
-  const rrCtx=document.getElementById('rr-chart').getContext('2d');
-  if(rrChartInst)rrChartInst.destroy();
-  const targets=[1.5,2,2.5,3,4,5];
-  const rewards=targets.map(t=>{const tp=avg*(1+(avg-liq)/avg*t);return parseFloat(((tp-avg)/avg*pos).toFixed(0));});
-  const riskAmt=parseFloat(((liq-avg)/avg*pos).toFixed(0));
-  rrChartInst=new Chart(rrCtx,{
+  // 2. MAPA DE DCA (Volumen por Precio de Entrada)
+  const dcaCtx=document.getElementById('dca-map-chart').getContext('2d');
+  if(dcaInst)dcaInst.destroy();
+  
+  // Ordenar los trades por precio para hacer las barras horizontales más lógicas
+  const sortedTrades = [...trades].sort((a,b)=> a.entry - b.entry);
+  const dcaLabels = sortedTrades.map(t => '$' + Math.round(t.entry).toLocaleString());
+  const dcaData = sortedTrades.map(t => t.position);
+
+  dcaInst=new Chart(dcaCtx,{
     type:'bar',
     data:{
-      labels:targets.map(t=>`1:${t}`),
-      datasets:[
-        {label:'Beneficio potencial',data:rewards,backgroundColor:'rgba(74,222,128,0.6)',borderColor:'#4ade80',borderWidth:1},
-        {label:'Riesgo (liquidación)',data:targets.map(()=>Math.abs(riskAmt)),backgroundColor:'rgba(248,113,113,0.3)',borderColor:'#f87171',borderWidth:1}
-      ]
+      labels:dcaLabels,
+      datasets:[{
+        label:'Tamaño de Posición', data:dcaData,
+        backgroundColor:'rgba(74, 222, 128, 0.4)', borderColor:'#4ade80', borderWidth:1
+      }]
     },
     options:{
+      indexAxis: 'y', // Barras horizontales
       responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false}},
       scales:{
-        x:{ticks:{color:'#444',font:{family:'IBM Plex Mono',size:9}},grid:{display:false},border:{color:'rgba(255,255,255,0.1)'}},
-        y:{ticks:{color:'#444',font:{family:'IBM Plex Mono',size:9},callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'rgba(255,255,255,0.1)'}}
+        x:{ticks:{color:'#444',font:{family:'IBM Plex Mono',size:9},callback:v=>'$'+(v/1000).toFixed(1)+'k'},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'rgba(255,255,255,0.1)'}},
+        y:{ticks:{color:'#888',font:{family:'IBM Plex Mono',size:9}},grid:{display:false},border:{color:'rgba(255,255,255,0.1)'}}
       }
     }
   });
 
-  // 3. Trades Mix Chart (Position size vs Entry price)
+  // 3. Trades Mix Chart (Position size vs Entry price - Línea temporal)
   const mixCtx=document.getElementById('trades-mix-chart').getContext('2d');
   if(tradesMixInst)tradesMixInst.destroy();
-  const tLabels=trades.map((t,i)=>`T${i+1} (${t.date.slice(5)})`);
+  const tLabels=trades.map((t,i)=>`T${i+1}`);
   const tPositions=trades.map(t=>t.position);
   const tEntries=trades.map(t=>t.entry);
   
@@ -1024,11 +1034,11 @@ function renderMiniCharts(){
       datasets:[
         {
           type:'line', label:'Precio de Entrada', data:tEntries,
-          borderColor:'#fbbf24', backgroundColor:'#fbbf24', borderWidth:2, yAxisID:'y1', pointRadius:4
+          borderColor:'#60a5fa', backgroundColor:'#60a5fa', borderWidth:2, yAxisID:'y1', pointRadius:4
         },
         {
           type:'bar', label:'Posición (USDT)', data:tPositions,
-          backgroundColor:'rgba(96,165,250,0.3)', borderColor:'#60a5fa', borderWidth:1, yAxisID:'y'
+          backgroundColor:'rgba(167, 139, 250, 0.3)', borderColor:'#a78bfa', borderWidth:1, yAxisID:'y'
         }
       ]
     },
@@ -1037,9 +1047,9 @@ function renderMiniCharts(){
       interaction:{mode:'index', intersect:false},
       plugins:{legend:{display:false}},
       scales:{
-        x:{grid:{display:false}, ticks:{color:'#888', font:{family:'IBM Plex Mono', size:9}}},
-        y:{type:'linear', display:true, position:'left', grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#60a5fa', font:{family:'IBM Plex Mono', size:9}}},
-        y1:{type:'linear', display:true, position:'right', grid:{drawOnChartArea:false}, ticks:{color:'#fbbf24', font:{family:'IBM Plex Mono', size:9}, callback:v=>'$'+(v/1000).toFixed(1)+'k'}}
+        x:{grid:{display:false}, ticks:{color:'#888', font:{family:'IBM Plex Mono',size:9}}},
+        y:{type:'linear', display:true, position:'left', grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#a78bfa', font:{family:'IBM Plex Mono',size:9}}},
+        y1:{type:'linear', display:true, position:'right', grid:{drawOnChartArea:false}, ticks:{color:'#60a5fa', font:{family:'IBM Plex Mono',size:9}, callback:v=>'$'+(v/1000).toFixed(1)+'k'}}
       }
     }
   });
@@ -1089,25 +1099,18 @@ function calcEMA(closes,period){
   return ema;
 }
 
-// Realized Price proxy. Usamos Cumulative Volume Weighted Price anclado a 53.833 para que sea matemáticamente elegante.
-function calcRealizedPrice(ohlcv){
-  let cumVol = 0, cumTV = 0;
-  let rawRP = [];
-  for(let c of ohlcv){
-    const typ = (c.open + c.high + c.low + c.close) / 4;
-    cumVol += c.volume;
-    cumTV += typ * c.volume;
-    rawRP.push(cumVol > 0 ? cumTV / cumVol : typ);
-  }
-  const lastVal = rawRP[rawRP.length - 1];
-  const targetRP = 53833;
-  const scale = targetRP / lastVal;
-  return rawRP.map(v => v * scale);
+function changeTimeframe(tf, btn){
+  currentTf = tf;
+  // Actualizar UI de los botones
+  document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  // Renderizar gráfico
+  if(activeTab === 'grafico') initBTCChart();
 }
 
 async function initBTCChart(){
   const container=document.getElementById('btc-chart');
-  container.innerHTML='';
+  container.innerHTML='<div style="color:var(--text3);font-family:var(--mono);font-size:.75rem;padding:2rem;text-align:center;">Cargando velas de Binance...</div>';
   lwChart=null; lwSeries={};
 
   if(typeof LightweightCharts==='undefined'){
@@ -1116,6 +1119,8 @@ async function initBTCChart(){
   }
 
   const ohlcv=await fetchOHLCV(currentTf);
+  container.innerHTML=''; // Limpiar loading
+
   if(!ohlcv.length){
     container.innerHTML='<div style="color:var(--text3);font-family:var(--mono);font-size:.75rem;padding:2rem;text-align:center;">Sin datos. Verificá tu conexión.</div>';
     return;
@@ -1132,7 +1137,7 @@ async function initBTCChart(){
     timeScale:{borderColor:'rgba(255,255,255,0.08)',timeVisible:true},
   });
 
-  // Candles
+  // Velas
   const candleSeries=lwChart.addCandlestickSeries({
     upColor:'#4ade80',downColor:'#f87171',borderUpColor:'#4ade80',borderDownColor:'#f87171',
     wickUpColor:'#4ade80',wickDownColor:'#f87171'
@@ -1161,15 +1166,8 @@ async function initBTCChart(){
     s.setData(ohlcv.map((c,i)=>ema200[i]!=null?{time:c.time,value:ema200[i]}:null).filter(Boolean));
     lwSeries.ema200=s;
   }
-  // Realized Price
-  if(indicators.realized){
-    const rp=calcRealizedPrice(ohlcv);
-    const s=lwChart.addLineSeries({color:'#fb923c',lineWidth:1.5,lineStyle:LightweightCharts.LineStyle.LargeDashed,priceLineVisible:true,lastValueVisible:true});
-    s.setData(ohlcv.map((c,i)=>rp[i]!=null?{time:c.time,value:rp[i]}:null).filter(Boolean));
-    lwSeries.realized=s;
-  }
 
-  // Lógica de líneas estáticas del portafolio (si aplica)
+  // Lógica de líneas estáticas del portafolio (si hay un promedio y liquidación)
   if(trades.length){
     const{avg,liq}=metrics();
     if(avg>0){
@@ -1189,11 +1187,6 @@ async function initBTCChart(){
 function toggleInd(key,btn){
   indicators[key]=!indicators[key];
   btn.classList.toggle('on',indicators[key]);
-  if(activeTab==='grafico')initBTCChart();
-}
-
-function changeTimeframe(tf){
-  currentTf=tf;
   if(activeTab==='grafico')initBTCChart();
 }
 
