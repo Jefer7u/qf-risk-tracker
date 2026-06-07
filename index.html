@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantfury — BTC Risk Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0a0a; --bg2:#111; --bg3:#181818;
+  --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.15);
+  --text:#f0f0f0; --text2:#888; --text3:#555;
+  --green:#4ade80; --green-bg:rgba(74,222,128,0.08);
+  --red:#f87171;   --red-bg:rgba(248,113,113,0.08);
+  --amber:#fbbf24; --amber-bg:rgba(251,191,36,0.08);
+  --blue:#60a5fa;  --blue-bg:rgba(96,165,250,0.08);
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  --r:6px; --rl:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:14px;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:300;line-height:1.6;min-height:100vh;}
+.shell{max-width:1120px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+
+/* Header */
+.header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);}
+.header h1{font-family:var(--mono);font-size:1.15rem;font-weight:500;}
+.header p{font-size:.78rem;color:var(--text2);margin-top:3px;font-family:var(--mono);}
+.btc-btn{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:6px 12px;font-family:var(--mono);font-size:.82rem;color:var(--text2);cursor:pointer;transition:border-color .2s;}
+.btc-btn:hover{border-color:var(--border2);}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--text3);}
+.btc-btn.live .dot{background:var(--green);box-shadow:0 0 6px var(--green);}
+
+/* Alerts */
+.alert{display:none;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r);font-family:var(--mono);font-size:.78rem;margin-bottom:1.25rem;border-left:3px solid;}
+.alert.show{display:flex;}
+.alert-red{background:var(--red-bg);border-color:var(--red);color:var(--red);}
+.alert-amber{background:var(--amber-bg);border-color:var(--amber);color:var(--amber);}
+
+/* Metrics */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:1.25rem;}
+.metric{background:var(--bg2);padding:1.1rem 1.25rem;}
+.metric label{font-size:.65rem;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:5px;}
+.metric .val{font-family:var(--mono);font-size:1.3rem;font-weight:500;}
+.metric .sub{font-size:.68rem;color:var(--text3);margin-top:3px;font-family:var(--mono);}
+
+/* Cards */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.25rem;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.2rem;}
+.card-title{font-size:.65rem;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.7rem;}
+.big{font-family:var(--mono);font-size:1.45rem;font-weight:500;}
+.note{font-size:.7rem;color:var(--text2);margin-top:5px;font-family:var(--mono);}
+.bar-wrap{height:4px;background:var(--bg3);border-radius:2px;margin-top:10px;overflow:hidden;}
+.bar{height:100%;border-radius:2px;transition:width .4s,background .4s;}
+.lev-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+
+/* Tags */
+.tag{display:inline-block;font-size:.68rem;font-family:var(--mono);padding:2px 7px;border-radius:3px;font-weight:500;}
+.tag-green{background:var(--green-bg);color:var(--green);}
+.tag-amber{background:var(--amber-bg);color:var(--amber);}
+.tag-red{background:var(--red-bg);color:var(--red);}
+.tag-blue{background:var(--blue-bg);color:var(--blue);}
+
+/* SL slider */
+.sl-row{display:flex;align-items:center;gap:10px;margin:10px 0;}
+.sl-row label{font-size:.7rem;font-family:var(--mono);color:var(--text3);min-width:70px;}
+input[type=range]{flex:1;accent-color:var(--text);}
+.sl-row span{font-family:var(--mono);font-size:.82rem;font-weight:500;min-width:55px;text-align:right;}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;margin-bottom:1.25rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:3px;width:fit-content;}
+.tab{background:transparent;border:none;color:var(--text2);font-size:.78rem;font-family:var(--mono);padding:6px 14px;border-radius:4px;cursor:pointer;transition:all .15s;}
+.tab.active{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* Tables */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.76rem;}
+thead th{text-align:left;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:0 10px 9px;font-weight:400;border-bottom:1px solid var(--border);}
+tbody td{padding:10px 10px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:var(--bg3);}
+tfoot td{padding:9px 10px;font-weight:500;color:var(--text);border-top:1px solid var(--border2);}
+
+/* Forms & Strategy layout */
+.form-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px;}
+.est-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.est-section{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;}
+.est-title{font-family:var(--mono);font-size:.85rem;font-weight:500;margin-bottom:1rem;color:var(--text);}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
+.fg label{font-size:.65rem;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;}
+input[type=text],input[type=number],input[type=date],select{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:.8rem;padding:7px 9px;width:100%;outline:none;transition:border-color .2s;}
+input:focus,select:focus{border-color:var(--border2);}
+.btn{background:var(--text);color:var(--bg);font-family:var(--mono);font-size:.8rem;font-weight:500;border:none;border-radius:var(--r);padding:9px 18px;cursor:pointer;width:100%;transition:opacity .15s;}
+.btn:hover{opacity:.85;}
+.btn-del{background:transparent;border:1px solid var(--border);color:var(--text3);font-family:var(--mono);font-size:.7rem;border-radius:4px;padding:3px 8px;cursor:pointer;transition:all .15s;}
+.btn-del:hover{border-color:var(--text);color:var(--text);}
+.btn-del.red:hover{border-color:var(--red);color:var(--red);}
+
+.result-box{font-family:var(--mono);font-size:.78rem;color:var(--text2);padding-top:10px;border-top:1px dashed var(--border);margin-top:10px;}
+.result-box strong{color:var(--text);}
+
+/* Responsive */
+@media(max-width:800px){
+  .metrics{grid-template-columns:repeat(2,1fr);}
+  .cards{grid-template-columns:1fr;}
+  .form-grid,.est-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="header">
+    <div>
+      <h1>BTC/USDT — Risk Tracker</h1>
+      <p>Long · Margen Cruzado · Quantfury</p>
+    </div>
+    <button class="btc-btn" id="btc-btn" onclick="fetchPrice()">
+      <span class="dot"></span>
+      <span id="btc-txt">Actualizar precio</span>
+    </button>
+  </div>
+
+  <div class="alert alert-red"   id="a-danger">⚠ Liquidación inminente — precio a menos del 5% del nivel de liquidación.</div>
+  <div class="alert alert-amber" id="a-warn">△ Margen reducido — liquidación a <span id="a-dist"></span>% del precio actual.</div>
+
+  <div class="metrics">
+    <div class="metric"><label>Capital depositado</label><div class="val" id="m-cap">$0</div><div class="sub">Total de la cuenta</div></div>
+    <div class="metric"><label>Posición total</label><div class="val" id="m-pos">$0</div><div class="sub">Tamaño apalancado</div></div>
+    <div class="metric"><label>Precio promedio</label><div class="val" id="m-avg">$0</div><div class="sub">Entry ponderado</div></div>
+    <div class="metric"><label>P&amp;L estimado</label><div class="val" id="m-pnl">—</div><div class="sub" id="m-pnl-sub">Esperando precio BTC</div></div>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-title">Liquidación exacta (Quantfury)</div>
+      <div class="big" id="c-liq" style="color:var(--red)">$0</div>
+      <div class="note" id="c-liq-dist">—</div>
+      <div class="bar-wrap"><div class="bar" id="liq-bar"></div></div>
+      <div class="note" id="c-liq-note" style="margin-top:8px;">—</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Apalancamiento efectivo</div>
+      <div class="big" id="c-lev">0x</div>
+      <div class="note">Posición total / Capital depositado</div>
+      <div class="lev-tags" id="lev-tags"></div>
+      <div class="note" id="c-margin" style="margin-top:8px;">—</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Simulador de Margen Libre</div>
+      <div class="big" id="c-sl" style="color:var(--amber)">$0</div>
+      <div class="note" id="c-sl-note">—</div>
+      <div class="sl-row" style="margin-top:12px;">
+        <label>Caída</label>
+        <input type="range" id="sl-pct" max="-1" value="-100" step="1" oninput="render()">
+        <span id="sl-pct-out" style="color:var(--red)">-100%</span>
+      </div>
+      <div class="note">Pérdida en USDT: <strong id="sl-loss" style="color:var(--text)">$0</strong></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tbtn-trades"    onclick="setTab('trades',this)">Trades</button>
+    <button class="tab"        id="tbtn-estrategia" onclick="setTab('estrategia',this)">Simulador de Estrategia</button>
+    <button class="tab"        id="tbtn-nuevo"     onclick="setTab('nuevo',this)">+ Nuevo trade</button>
+  </div>
+
+  <div class="tab-content active" id="tab-trades">
+    <div class="card">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th><th>Capital</th><th>Posición</th><th>Lev.</th>
+              <th>Entrada</th><th>Liq. individual</th><th>P&amp;L</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="trades-body"></tbody>
+          <tfoot id="trades-foot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-estrategia">
+    <div class="est-grid">
+      <div class="est-section">
+        <div class="est-title">🎯 Proyección de DCA (Bajar Promedio)</div>
+        <div class="note" style="margin-bottom:15px;">Calculá cuánto capital necesitás inyectar para llevar tu precio promedio actual a una meta específica.</div>
+        
+        <div class="fg"><label>Promedio objetivo deseado ($)</label><input type="number" id="est-target-avg" placeholder="65000" oninput="calcEstrategia()"></div>
+        <div class="fg"><label>Precio de compra estimado ($)</label><input type="number" id="est-entry-px" placeholder="58000" oninput="calcEstrategia()"></div>
+        <div class="fg"><label>Apalancamiento a usar</label>
+          <select id="est-lev" onchange="calcEstrategia()">
+            <option value="5" selected>x5</option><option value="10">x10</option><option value="20">x20</option>
+          </select>
+        </div>
+        <div class="result-box" id="res-promedio">Ingresá los datos para simular tu próxima entrada.</div>
+      </div>
+
+      <div class="est-section">
+        <div class="est-title">🛡️ Plan de Supervivencia (Drawdown)</div>
+        <div class="note" style="margin-bottom:15px;">Calculá exactamente cuánto margen extra debés tener listo en tu wallet si el precio se desploma abruptamente.</div>
+        
+        <div class="fg"><label>Simular caída de BTC a ($)</label><input type="number" id="est-drop-px" placeholder="45000" oninput="calcEstrategia()"></div>
+        
+        <div class="result-box" id="res-supervivencia" style="margin-top:20px; padding-top:15px;">Esperando escenario de precio...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-nuevo">
+    <div class="card">
+      <div class="card-title" id="form-title">Registrar nuevo trade</div>
+      <div class="form-grid">
+        <div class="fg"><label>Fecha</label><input type="date" id="inp-date"></div>
+        <div class="fg"><label>Capital dep. (USDT)</label><input type="number" id="inp-capital" placeholder="200" oninput="autoCalcLev()"></div>
+        <div class="fg"><label>Tamaño posición (USDT)</label><input type="number" id="inp-position" placeholder="1000" oninput="autoCalcLev()"></div>
+        <div class="fg"><label>Precio BTC entrada</label><input type="number" id="inp-entry" placeholder="65000"></div>
+        <div class="fg"><label>Apalancamiento (Auto)</label>
+          <input type="text" id="inp-lev-display" value="0x" readonly style="color:var(--blue); font-weight:500; cursor:not-allowed;">
+        </div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn" id="btn-submit" onclick="saveTrade()">+ Registrar trade</button>
+        <button class="btn" id="btn-cancel" onclick="cancelEdit()" style="display:none; background:var(--bg3); color:var(--text);">Cancelar edición</button>
+      </div>
+    </div>
+  </div>
+
+</div><script>
+// ── Estado ────────────────────────────────────────────────────────────────────
+const SK = 'qf_v10'; 
+let btcPrice = null;
+let activeTab = 'trades';
+let editingId = null;
+
+// Trades extraídos de la captura real de Quantfury
+let trades = JSON.parse(localStorage.getItem(SK) || 'null') || [
+  { id:1, date:'2026-05-23', capital:1000, position:5000, entry:75342.28, leverage:5 },
+  { id:2, date:'2026-05-30', capital:200,  position:1000, entry:73500.82, leverage:5 },
+  { id:3, date:'2026-06-01', capital:200,  position:1000, entry:72001.06, leverage:5 },
+  { id:4, date:'2026-06-02', capital:200,  position:1000, entry:70008.62, leverage:5 },
+  { id:5, date:'2026-06-02', capital:200,  position:1000, entry:67007.97, leverage:5 },
+  { id:6, date:'2026-06-03', capital:200,  position:1000, entry:66004.00, leverage:5 },
+  { id:7, date:'2026-06-05', capital:200,  position:1000, entry:62009.21, leverage:5 },
+  { id:8, date:'2026-06-05', capital:400,  position:2000, entry:60009.11, leverage:5 }
+];
+
+function save(){ localStorage.setItem(SK, JSON.stringify(trades)); }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const f  = (n,d=0) => '$'+Number(n.toFixed(d)).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fN = (n,d=2) => Number(n.toFixed(d)).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+
+const MAINT = 0; 
+
+function liqIndiv(entry, lev){ 
+  return entry * (1 - 1/lev + MAINT); 
+}
+
+function liqPortfolio(list){
+  const pos = list.reduce((s,t)=>s+t.position,0);
+  if(pos === 0) return 0;
+  const cap = list.reduce((s,t)=>s+t.capital,0);
+  const avg = list.reduce((s,t)=>s+t.entry*t.position,0)/pos;
+  const maint = pos * MAINT;
+  return avg * (1 - (cap - maint) / pos);
+}
+
+function metrics(){
+  const cap   = trades.reduce((s,t)=>s+t.capital,0);
+  const pos   = trades.reduce((s,t)=>s+t.position,0);
+  const avg   = pos > 0 ? trades.reduce((s,t)=>s+t.entry*t.position,0)/pos : 0;
+  const lev   = cap > 0 ? pos/cap : 0;
+  const liq   = liqPortfolio(trades);
+  const mUsed = trades.reduce((s,t)=>s+t.position/t.leverage,0);
+  const mFree = cap - mUsed;
+  return {cap,pos,avg,lev,liq,mUsed,mFree};
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function setTab(name, btn){
+  activeTab = name;
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='estrategia') calcEstrategia();
+}
+
+function goTab(name){
+  activeTab = name;
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('tbtn-'+name).classList.add('active');
+}
+
+// ── Render principal ──────────────────────────────────────────────────────────
+function render(){
+  if(!trades.length) return;
+  const {cap,pos,avg,lev,liq,mUsed,mFree} = metrics();
+  const ref = btcPrice || avg;
+
+  document.getElementById('m-cap').textContent = f(cap);
+  document.getElementById('m-pos').textContent = f(pos);
+  document.getElementById('m-avg').textContent = f(avg);
+
+  // PnL
+  if(btcPrice != null){
+    const pnl    = (btcPrice-avg)/avg*pos;
+    const pnlPct = pnl/cap*100;
+    const el = document.getElementById('m-pnl');
+    el.textContent = (pnl>=0?'+':'')+f(pnl);
+    el.style.color = pnl>=0?'var(--green)':'var(--red)';
+    document.getElementById('m-pnl-sub').textContent = (pnlPct>=0?'+':'')+pnlPct.toFixed(2)+'% sobre capital';
+  }
+
+  // Liquidación
+  const dist = (ref-liq)/ref*100;
+  document.getElementById('c-liq').textContent = f(liq);
+  document.getElementById('c-liq-dist').textContent = btcPrice
+    ? dist.toFixed(1)+'% por debajo del precio actual'
+    : 'Basado en precio de entrada promedio';
+  const danger=dist<10, warn=dist<20;
+  const bar = document.getElementById('liq-bar');
+  bar.style.width      = Math.min(100,Math.max(0,100-dist))+'%';
+  bar.style.background = danger?'var(--red)':warn?'var(--amber)':'var(--green)';
+  const note = document.getElementById('c-liq-note');
+  note.textContent = danger?'⚠ Riesgo ALTO':warn?'△ Precaución':'✓ Margen cómodo';
+  note.style.color = danger?'var(--red)':warn?'var(--amber)':'var(--green)';
+
+  // Apalancamiento
+  document.getElementById('c-lev').textContent = fN(lev,1)+'x';
+  
+  // Limitar tags a 4 para no saturar UI, mostrar resumen si hay más
+  let tagsHtml = trades.slice(0,4).map(t=>
+    `<span class="tag ${t.leverage<=5?'tag-green':t.leverage<=7?'tag-amber':'tag-red'}">x${Number(t.leverage.toFixed(2))} · ${f(t.position)}</span>`
+  ).join('');
+  if (trades.length > 4) tagsHtml += `<span class="tag" style="background:var(--bg3)">+${trades.length - 4} trades</span>`;
+  document.getElementById('lev-tags').innerHTML = tagsHtml;
+  
+  document.getElementById('c-margin').textContent =
+    `Margen requerido por app: ${f(mUsed)} · Disponible extra: ${f(mFree)}`;
+
+  // Simulador de Stop Loss / Margen
+  const slInput = document.getElementById('sl-pct');
+  const maxLossPct = Math.floor(lev * 100) || 100; 
+  slInput.min = -maxLossPct; 
+  if (parseInt(slInput.value) < -maxLossPct) {
+    slInput.value = -maxLossPct;
+  }
+
+  const pnlPctVal = parseInt(slInput.value); 
+  const slPct     = Math.abs(pnlPctVal) / 100;
+  const slLoss    = cap * slPct;
+  const slPx      = avg * (1 - slLoss / pos); 
+  
+  document.getElementById('sl-pct-out').textContent = pnlPctVal + '%';
+  document.getElementById('c-sl').textContent       = f(slPx);
+  
+  if (slPct <= 1) {
+    document.getElementById('c-sl-note').textContent = `Cerrar si el P&L llega a ${pnlPctVal}% del capital`;
+    document.getElementById('sl-loss').innerHTML     = f(slLoss);
+  } else {
+    const extraMargin = slLoss - cap;
+    document.getElementById('c-sl-note').textContent = `Para soportar esta caída debés inyectar margen`;
+    document.getElementById('sl-loss').innerHTML     = `${f(slLoss)} <span style="color:var(--red)">(Agregar ${f(extraMargin)})</span>`;
+  }
+
+  // Alertas
+  document.getElementById('a-danger').classList.remove('show');
+  document.getElementById('a-warn').classList.remove('show');
+  if(btcPrice != null){
+    if(dist<5)       document.getElementById('a-danger').classList.add('show');
+    else if(dist<15){
+      document.getElementById('a-warn').classList.add('show');
+      document.getElementById('a-dist').textContent = dist.toFixed(1);
+    }
+  }
+
+  renderTrades();
+  if(activeTab==='estrategia') calcEstrategia();
+}
+
+// ── Tabla trades ──────────────────────────────────────────────────────────────
+function renderTrades(){
+  const tbody = document.getElementById('trades-body');
+  const tfoot = document.getElementById('trades-foot');
+  tbody.innerHTML = '';
+
+  trades.forEach(t=>{
+    const liq = liqIndiv(t.entry, t.leverage);
+    const pnl = btcPrice!=null ? (btcPrice-t.entry)/t.entry*t.position : null;
+    const [y,mo,d] = t.date.split('-');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--text)">${d}/${mo}/${y}</td>
+      <td>${f(t.capital)}</td>
+      <td style="color:var(--text)">${f(t.position)}</td>
+      <td><span class="tag ${t.leverage<=5?'tag-green':t.leverage<=7?'tag-amber':'tag-red'}">x${Number(t.leverage.toFixed(2))}</span></td>
+      <td style="color:var(--text)">${f(t.entry)}</td>
+      <td style="color:var(--red)">${f(liq)}</td>
+      <td style="color:${pnl==null?'var(--text3)':pnl>=0?'var(--green)':'var(--red)'}">
+        ${pnl==null?'—':(pnl>=0?'+':'')+f(pnl)}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn-del" onclick="editTrade(${t.id})" title="Editar" style="margin-right:4px;">✎</button>
+        <button class="btn-del red" onclick="delTrade(${t.id})" title="Eliminar">✕</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  const {cap,pos,avg,lev,liq} = metrics();
+  const tot = btcPrice!=null ? trades.reduce((s,t)=>s+(btcPrice-t.entry)/t.entry*t.position,0) : null;
+  tfoot.innerHTML = `<tr>
+    <td>TOTAL</td><td>${f(cap)}</td><td>${f(pos)}</td>
+    <td><span class="tag tag-blue">${fN(lev,2)}x</span></td>
+    <td>${f(avg)}</td>
+    <td style="color:var(--red)" title="Liquidación real del portafolio">${f(liq)} ★</td>
+    <td style="color:${tot==null?'var(--text3)':tot>=0?'var(--green)':'var(--red)'}">
+      ${tot==null?'—':(tot>=0?'+':'')+f(tot)}</td>
+    <td></td></tr>`;
+}
+
+// ── Simuladores Estrategia ────────────────────────────────────────────────────
+function calcEstrategia() {
+  if(!trades.length) return;
+  const {cap, pos, avg} = metrics();
+
+  // --- Módulo DCA / Promedio ---
+  const elTarg = document.getElementById('est-target-avg');
+  const elEntr = document.getElementById('est-entry-px');
+  const elLev  = document.getElementById('est-lev');
+  const resProm = document.getElementById('res-promedio');
+
+  if(elTarg && elEntr && elLev) {
+    const targ = parseFloat(elTarg.value);
+    const entr = parseFloat(elEntr.value);
+    const l    = parseFloat(elLev.value) || 5;
+
+    if (!targ || !entr) {
+      resProm.innerHTML = 'Ingresá los datos para simular tu próxima entrada.';
+    } else if (targ >= avg) {
+      resProm.innerHTML = `<span style="color:var(--red)">El promedio objetivo (${f(targ)}) debe ser MENOR al actual (${f(avg)}).</span>`;
+    } else if (entr >= targ) {
+      resProm.innerHTML = `<span style="color:var(--red)">Para bajar el promedio a ${f(targ)}, debés comprar más barato que eso.</span>`;
+    } else {
+      // Math: NewPos = CurrentPos * (CurrentAvg - TargetAvg) / (TargetAvg - EntryPrice)
+      const newPos = pos * (avg - targ) / (targ - entr);
+      const newCap = newPos / l;
+      resProm.innerHTML = `Para bajar tu promedio a <strong>${f(targ)}</strong> comprando BTC a ${f(entr)}, necesitás agregar una posición de <strong>${f(newPos)}</strong>.<br><br>Esto requiere que inyectes <strong style="color:var(--green)">${f(newCap)} USDT</strong> de margen nuevo a x${l}. Tu portafolio total pasaría a ser de ${f(pos + newPos)}.`;
+    }
+  }
+
+  // --- Módulo Supervivencia ---
+  const elDrop = document.getElementById('est-drop-px');
+  const resSurv = document.getElementById('res-supervivencia');
+
+  if(elDrop) {
+    const drop = parseFloat(elDrop.value);
+    if (!drop) {
+      resSurv.innerHTML = 'Esperando escenario de precio...';
+    } else if (drop >= avg) {
+      resSurv.innerHTML = '<span style="color:var(--text3)">El precio ingresado no representa una caída desde el promedio.</span>';
+    } else {
+      const pnlDrop = (drop - avg) / avg * pos;
+      const isLiquidated = pnlDrop <= -cap;
+      
+      let msg = `P&L flotante si BTC cae a ${f(drop)}: <strong style="color:var(--red)">${f(pnlDrop)} USDT</strong>.<br><br>`;
+      
+      if (isLiquidated) {
+        const extraNeeded = Math.abs(pnlDrop) - cap;
+        msg += `⚠ <strong>Riesgo de Liquidación Crítico.</strong> Debés transferir al menos <strong style="color:var(--red)">${f(extraNeeded)} USDT</strong> adicionales a la cuenta de Quantfury para que el trade sobreviva este nivel.`;
+      } else {
+        const spare = cap + pnlDrop;
+        msg += `<span style="color:var(--green)">✓ Tu capital actual sobrevive esta caída.</span> Te seguirían quedando ${f(spare)} de margen para aguantar.`;
+      }
+      resSurv.innerHTML = msg;
+    }
+  }
+}
+
+// ── Agregar / editar trades ───────────────────────────────────────────────────
+function autoCalcLev() {
+  const cap = parseFloat(document.getElementById('inp-capital').value);
+  const pos = parseFloat(document.getElementById('inp-position').value);
+  const levDisplay = document.getElementById('inp-lev-display');
+  if (cap > 0 && pos > 0) {
+    const calculatedLev = pos / cap;
+    levDisplay.value = Number(calculatedLev.toFixed(2)) + 'x';
+  } else {
+    levDisplay.value = '0x';
+  }
+}
+
+function saveTrade(){
+  const date     = document.getElementById('inp-date').value;
+  const capital  = parseFloat(document.getElementById('inp-capital').value);
+  const position = parseFloat(document.getElementById('inp-position').value);
+  const entry    = parseFloat(document.getElementById('inp-entry').value);
+
+  if(!date || isNaN(capital)||capital<=0 || isNaN(position)||position<=0 || isNaN(entry)||entry<=0){
+    alert('Completá todos los campos con valores válidos.');
+    return;
+  }
+
+  const leverage = position / capital;
+
+  if (editingId) {
+    const idx = trades.findIndex(t => t.id === editingId);
+    if (idx !== -1) trades[idx] = { ...trades[idx], date, capital, position, entry, leverage };
+    cancelEdit(); 
+  } else {
+    trades.push({id:Date.now(), date, capital, position, entry, leverage});
+    save();
+    resetForm();
+    goTab('trades');
+    render();
+  }
+}
+
+function editTrade(id) {
+  const t = trades.find(x => x.id === id);
+  if(!t) return;
+  
+  editingId = id;
+  document.getElementById('inp-date').value     = t.date;
+  document.getElementById('inp-capital').value  = t.capital;
+  document.getElementById('inp-position').value = t.position;
+  document.getElementById('inp-entry').value    = t.entry;
+  autoCalcLev();
+  
+  document.getElementById('form-title').textContent = 'Editar trade';
+  document.getElementById('btn-submit').textContent = '✓ Guardar cambios';
+  document.getElementById('btn-cancel').style.display = 'inline-block';
+  goTab('nuevo');
+}
+
+function cancelEdit() {
+  editingId = null;
+  resetForm();
+  document.getElementById('form-title').textContent = 'Registrar nuevo trade';
+  document.getElementById('btn-submit').textContent = '+ Registrar trade';
+  document.getElementById('btn-cancel').style.display = 'none';
+  save();
+  goTab('trades');
+  render();
+}
+
+function resetForm() {
+  document.getElementById('inp-capital').value  = '';
+  document.getElementById('inp-position').value = '';
+  document.getElementById('inp-entry').value    = '';
+  document.getElementById('inp-date').value     = new Date().toISOString().split('T')[0];
+  autoCalcLev();
+}
+
+function delTrade(id){
+  if(!confirm('¿Estás seguro de eliminar este trade?')) return;
+  trades = trades.filter(t=>t.id!==id);
+  save();
+  render();
+}
+
+// ── Precio BTC (Binance público) ──────────────────────────────────────────────
+async function fetchPrice(){
+  const btn = document.getElementById('btc-btn');
+  const txt = document.getElementById('btc-txt');
+  txt.textContent='Actualizando...';
+  btn.classList.remove('live');
+  try{
+    const r = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+    const d = await r.json();
+    btcPrice = parseFloat(d.price);
+    txt.textContent = '$'+Math.round(btcPrice).toLocaleString('en-US')+' BTC/USDT';
+    btn.classList.add('live');
+  }catch(e){
+    txt.textContent='Sin conexión';
+  }
+  render();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById('inp-date').value = new Date().toISOString().split('T')[0];
+render();
+fetchPrice();
+</script>
+</body>
+</html>
