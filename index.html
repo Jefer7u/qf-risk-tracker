@@ -3,25 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quantfury — BTC Risk Tracker Pro v3.5</title>
+<title>Quantfury — BTC Risk Tracker Pro</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111111'/><text x='50' y='55' font-family='monospace' font-size='38' font-weight='bold' fill='%23ffffff' text-anchor='middle' dominant-baseline='middle'>JEF</text></svg>">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-<!-- Firebase Compat SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-<!-- TradingView Lightweight Charts -->
 <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 
 <style>
 /* ── CALIBRACIÓN DE VARIABLES Y TEMAS MONOCROMÁTICOS ── */
 :root[data-theme="dark"] {
-  --bg: #000000; --bg2: #111111; --bg3: #161619; --bg4: #222226;
+  --bg: #000000; --bg2: #111111; --bg3: #1a1a1c; --bg4: #2d2d30;
   --border: #1a1a1c; --border2: #2d2d30;
   --text: #ffffff; --text2: #a0a0a5; --text3: #5f5f65;
   --green: #10b981; --green-dim: rgba(16, 185, 129, 0.12);
@@ -29,7 +27,7 @@
   --amber: #f59e0b; --amber-dim: rgba(245, 158, 11, 0.12);
   --blue: #ffffff; --blue-dim: rgba(255, 255, 255, 0.08);
   --purple: #e0e0e5; --purple-dim: rgba(255, 255, 255, 0.05);
-  --grid-line: rgba(255, 255, 255, 0.02);
+  --grid-line: rgba(255, 255, 255, 0.03);
 }
 
 :root[data-theme="light"] {
@@ -41,7 +39,7 @@
   --amber: #d97706; --amber-dim: rgba(217, 119, 6, 0.08);
   --blue: #000000; --blue-dim: rgba(0, 0, 0, 0.06);
   --purple: #27272a; --purple-dim: rgba(0, 0, 0, 0.04);
-  --grid-line: rgba(0, 0, 0, 0.03);
+  --grid-line: rgba(0, 0, 0, 0.04);
 }
 
 :root {
@@ -69,6 +67,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-we
 #auth-error{color:var(--red);font-size:.8rem;margin-bottom:1rem;min-height:1.2rem;font-family:var(--font-mono);}
 .divider { display:flex; align-items:center; text-align:center; margin:1rem 0; color:var(--text3); font-size:.8rem; }
 .divider::before, .divider::after { content:''; flex:1; border-bottom:1px solid var(--border); }
+.divider:not(:empty)::before { margin-right:.5em; }
+.divider:not(:empty)::after { margin-left:.5em; }
 
 /* ── HEADER ── */
 .header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:15px;}
@@ -89,16 +89,24 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-we
 .alert-red{background:var(--red-dim);border-color:var(--red);color:var(--red);}
 .alert-amber{background:var(--amber-dim);border-color:var(--amber);color:var(--amber);}
 
-/* ── METRICS BAR ── */
-.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:1.5rem;}
-.metric{background:var(--bg2);padding:1.2rem;}
+/* ── METRICS BAR (Fixed Grid) ── */
+.metrics { display:grid; gap:1px; background:var(--border); border:1px solid var(--border); border-radius:var(--rl); overflow:hidden; margin-bottom:1.5rem; }
+@media(min-width: 1024px) { .metrics { grid-template-columns: repeat(5, 1fr); } }
+@media(min-width: 600px) and (max-width: 1023px) { .metrics { grid-template-columns: repeat(3, 1fr); } }
+@media(max-width: 599px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+
+.metric{background:var(--bg2);padding:1.2rem; min-width:0;}
 .metric label{font-size:.7rem;font-family:var(--font-sans);font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;}
-.metric .val{font-family:var(--font-mono);font-size:1.3rem;font-weight:600;line-height:1.2;color:var(--text);}
+.metric .val{font-family:var(--font-mono);font-size:1.3rem;font-weight:600;line-height:1.2;color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .metric .sub{font-size:.75rem;color:var(--text2);margin-top:4px;}
 
-/* ── RISK CARD LAYOUTS ── */
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:15px;margin-bottom:1.5rem;}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;display:flex;flex-direction:column;}
+/* ── RISK CARD LAYOUTS (Fixed Grid) ── */
+.cards { display:grid; gap:15px; margin-bottom:1.5rem; }
+@media(min-width: 1024px) { .cards { grid-template-columns: repeat(4, 1fr); } }
+@media(min-width: 650px) and (max-width: 1023px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+@media(max-width: 649px) { .cards { grid-template-columns: 1fr; } }
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;display:flex;flex-direction:column; min-width:0;}
 .card-title{font-size:.7rem;font-family:var(--font-sans);font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.8rem;}
 .big{font-family:var(--font-mono);font-size:1.6rem;font-weight:600;color:var(--text);}
 .note{font-size:.75rem;color:var(--text2);margin-top:6px;line-height:1.4;}
@@ -130,10 +138,9 @@ tbody td{padding:12px;border-bottom:1px solid var(--border);color:var(--text2);f
 tbody tr:hover td{background:var(--bg3);}
 tfoot td{padding:12px;font-weight:600;color:var(--text);border-top:2px solid var(--border2);font-family:var(--font-mono);background:var(--bg);}
 
-/* ── FORMS & ESTRATEGIA (FIJADO REDISTRIBUCIÓN GRID 2X2) ── */
-.est-grid{display:grid;grid-template-columns:repeat(2, 1fr);gap:20px;}
-@media(max-width:800px){ .est-grid{grid-template-columns:1fr;} }
-.est-section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;display:flex;flex-direction:column;justify-content:space-between;}
+/* ── FORMS & CALCULATORS ── */
+.est-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:15px;}
+.est-section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem; min-width:0;}
 .est-title{font-family:var(--font-sans);font-size:.95rem;font-weight:600;margin-bottom:1rem;color:var(--text);}
 .fg{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
 .fg label{font-size:.75rem;font-family:var(--font-sans);font-weight:500;color:var(--text2);}
@@ -142,7 +149,7 @@ input:focus,select:focus{border-color:var(--text2);}
 .result-box{font-family:var(--font-sans);font-size:.85rem;color:var(--text2);padding:12px;background:var(--bg);border-radius:var(--r);border:1px dashed var(--border);margin-top:15px;line-height:1.6;}
 .result-box strong{font-family:var(--font-mono);color:var(--text);}
 
-/* ── BOTONES ── */
+/* ── STRUCTURAL BUTTONS ── */
 .btn{background:var(--text);color:var(--bg);font-family:var(--font-sans);font-size:.85rem;font-weight:600;border:none;border-radius:var(--r);padding:10px 18px;cursor:pointer;transition:all var(--transition);}
 .btn:hover{opacity:.85;}
 .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);font-family:var(--font-sans);font-size:.85rem;font-weight:500;border-radius:var(--r);padding:10px 18px;cursor:pointer;}
@@ -151,8 +158,8 @@ input:focus,select:focus{border-color:var(--text2);}
 .btn-del:hover{background:var(--border);color:var(--text);}
 .btn-del.red:hover{background:var(--red-dim);border-color:var(--red);color:var(--red);}
 
-/* ── CHARTS SECTIONS ── */
-.chart-section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;margin-bottom:1.5rem;}
+/* ── CHART PANEL STRUCTURES ── */
+.chart-section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;margin-bottom:1.5rem; min-width:0;}
 .chart-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center;}
 .ind-btn{background:var(--bg);border:1px solid var(--border);color:var(--text3);font-family:var(--font-mono);font-size:.7rem;font-weight:500;padding:6px 12px;border-radius:6px;cursor:pointer;transition:all var(--transition);}
 .ind-btn.on{border-color:var(--text2);color:var(--text);}
@@ -161,10 +168,11 @@ input:focus,select:focus{border-color:var(--text2);}
 .tf-btn.on{background:var(--bg4);color:var(--text);}
 #btc-chart{width:100%;height:450px;border-radius:var(--r);overflow:hidden;}
 
-/* FIJADO: Grilla Simétrica Exclusiva de 6 Elementos (3x2) */
-.analytic-charts-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:20px;}
-@media(max-width:1024px){ .analytic-charts-grid{grid-template-columns:repeat(2, 1fr);} }
-@media(max-width:700px){ .analytic-charts-grid{grid-template-columns:1fr;} }
+/* ── ANALYTIC CHARTS GRID (Fixed Grid) ── */
+.analytic-charts-grid { display:grid; gap:15px; }
+@media(min-width: 850px) { .analytic-charts-grid { grid-template-columns: 1fr 1fr; } }
+@media(max-width: 849px) { .analytic-charts-grid { grid-template-columns: 1fr; } }
+
 .chart-container-large{position:relative;width:100%;height:260px;margin-top:10px;}
 
 /* ── MODALS ── */
@@ -293,7 +301,6 @@ input:focus,select:focus{border-color:var(--text2);}
     </div>
   </div>
 
-  <!-- PESTAÑA COMPLETA DE GRÁFICOS REDISTRIBUIDA EN 3X2 (image_3d7cc0.png) -->
   <div class="tab-content" id="tab-grafico">
     <div class="chart-section">
       <div class="chart-toolbar" id="chart-toolbar">
@@ -311,21 +318,20 @@ input:focus,select:focus{border-color:var(--text2);}
       <div id="btc-chart"></div>
     </div>
 
-    <!-- Grilla Simétrica Corregida de 6 Paneles con Color Desafiante -->
     <div class="analytic-charts-grid">
       <div class="card">
         <div class="card-title">Curva de Supervivencia (Drawdown)</div>
-        <div class="note">Caída de colateral a medida que el precio se arrastra a liquidación.</div>
+        <div class="note">Caída del capital (equity) a medida que el precio se acerca a liquidación.</div>
         <div class="chart-container-large"><canvas id="survival-chart"></canvas></div>
       </div>
       <div class="card">
         <div class="card-title">Mapa de DCA (Distribución por Precio)</div>
-        <div class="note">Concentración nominal de tus compras en diferentes niveles de precio.</div>
+        <div class="note">Concentración del volumen de tus compras en diferentes niveles de precio.</div>
         <div class="chart-container-large"><canvas id="dca-map-chart"></canvas></div>
       </div>
       <div class="card">
         <div class="card-title">Relación: Margen vs Posición</div>
-        <div class="note">Contraste de capital neto propio vs capital prestado por trade.</div>
+        <div class="note">Muestra cuánto capital propio (margen) vs capital prestado (posición) hay por trade.</div>
         <div class="chart-container-large"><canvas id="margin-pos-chart"></canvas></div>
       </div>
       <div class="card">
@@ -333,64 +339,43 @@ input:focus,select:focus{border-color:var(--text2);}
         <div class="note">Evolución temporal del tamaño de tus compras y su precio de entrada.</div>
         <div class="chart-container-large"><canvas id="trades-mix-chart"></canvas></div>
       </div>
-      <!-- Nuevo Gráfico 5 para Simetría Fija -->
-      <div class="card">
-        <div class="card-title">Margen Libre Remanente por Escenario</div>
-        <div class="note">Proyección de holgura de capital ante variaciones continuas.</div>
-        <div class="chart-container-large"><canvas id="margin-buffer-chart"></canvas></div>
-      </div>
-      <!-- Nuevo Gráfico 6 para Simetría Fija -->
-      <div class="card">
-        <div class="card-title">Trayectoria del Apalancamiento Efectivo</div>
-        <div class="note">Historial de mutación del apalancamiento real de la cuenta.</div>
-        <div class="chart-container-large"><canvas id="leverage-timeline-chart"></canvas></div>
-      </div>
     </div>
   </div>
 
-  <!-- TAB ESTRATEGIA REESCRITO EN DISPOSICIÓN SIMÉTRICA 2X2 (image_3d8047.png) -->
   <div class="tab-content" id="tab-estrategia">
     <div class="est-grid">
       <div class="est-section">
-        <div>
-          <div class="est-title">🎯 Proyección de DCA Objetivo</div>
-          <div class="note" style="margin-bottom:15px;">¿Cuánto capital necesitás inyectar para llevar tu promedio a un precio específico?</div>
-          <div class="fg"><label>Promedio deseado ($)</label><input type="number" id="est-target-avg" placeholder="Ej: 60000" oninput="calcEstrategia()"></div>
-          <div class="fg"><label>Comprando al precio de ($)</label><input type="number" id="est-entry-px" placeholder="Ej: 55000" oninput="calcEstrategia()"></div>
-          <div class="fg"><label>Usando Apalancamiento</label>
-            <select id="est-lev" onchange="calcEstrategia()">
-              <option value="2">x2</option><option value="3">x3</option><option value="5" selected>x5</option>
-              <option value="7">x7</option><option value="10">x10</option>
-            </select>
-          </div>
+        <div class="est-title">🎯 Proyección de DCA Objetivo</div>
+        <div class="note" style="margin-bottom:15px;">¿Cuánto capital necesitás inyectar para llevar tu promedio a un precio específico?</div>
+        <div class="fg"><label>Promedio deseado ($)</label><input type="number" id="est-target-avg" placeholder="Ej: 60000" oninput="calcEstrategia()"></div>
+        <div class="fg"><label>Comprando al precio de ($)</label><input type="number" id="est-entry-px" placeholder="Ej: 55000" oninput="calcEstrategia()"></div>
+        <div class="fg"><label>Usando Apalancamiento</label>
+          <select id="est-lev" onchange="calcEstrategia()">
+            <option value="2">x2</option><option value="3">x3</option><option value="5" selected>x5</option>
+            <option value="7">x7</option><option value="10">x10</option>
+          </select>
         </div>
         <div class="result-box" id="res-promedio">Ingresá los datos para simular.</div>
       </div>
       
       <div class="est-section">
-        <div>
-          <div class="est-title">🛡️ Prueba de Estrés (Sobrevivencia)</div>
-          <div class="note" style="margin-bottom:15px;">Calculá tu P&L y requerimientos de margen si el precio sufre una caída severa.</div>
-          <div class="fg"><label>Simular caída a ($)</label><input type="number" id="est-drop-px" placeholder="Ej: 40000" oninput="calcEstrategia()"></div>
-        </div>
+        <div class="est-title">🛡️ Prueba de Estrés (Sobrevivencia)</div>
+        <div class="note" style="margin-bottom:15px;">Calculá tu P&L y requerimientos de margen si el precio sufre una caída severa.</div>
+        <div class="fg"><label>Simular caída a ($)</label><input type="number" id="est-drop-px" placeholder="Ej: 40000" oninput="calcEstrategia()"></div>
         <div class="result-box" id="res-supervivencia">Esperando escenario...</div>
       </div>
 
       <div class="est-section">
-        <div>
-          <div class="est-title">📈 Simulador de Ganancia (Take Profit)</div>
-          <div class="note" style="margin-bottom:15px;">Proyectá tus retornos absolutos y ROI si el precio alcanza tu objetivo.</div>
-          <div class="fg"><label>Simular subida a ($)</label><input type="number" id="est-tp-px" placeholder="Ej: 90000" oninput="calcEstrategia()"></div>
-        </div>
+        <div class="est-title">📈 Simulador de Ganancia (Take Profit)</div>
+        <div class="note" style="margin-bottom:15px;">Proyectá tus retornos absolutos y ROI si el precio alcanza tu objetivo.</div>
+        <div class="fg"><label>Simular subida a ($)</label><input type="number" id="est-tp-px" placeholder="Ej: 90000" oninput="calcEstrategia()"></div>
         <div class="result-box" id="res-tp">Ingresá precio objetivo.</div>
       </div>
 
       <div class="est-section">
-        <div>
-          <div class="est-title">💰 Inyección de Margen de Emergencia</div>
-          <div class="note" style="margin-bottom:15px;">Verificá cómo mejora tu precio de liquidación agregando capital libre a la cuenta.</div>
-          <div class="fg"><label>Capital a inyectar (USDT)</label><input type="number" id="est-inject" placeholder="Ej: 500" oninput="calcEstrategia()"></div>
-        </div>
+        <div class="est-title">💰 Inyección de Margen de Emergencia</div>
+        <div class="note" style="margin-bottom:15px;">Verificá cómo mejora tu precio de liquidación agregando capital libre a la cuenta.</div>
+        <div class="fg"><label>Capital a inyectar (USDT)</label><input type="number" id="est-inject" placeholder="Ej: 500" oninput="calcEstrategia()"></div>
         <div class="result-box" id="res-inject">Ingresá el monto a inyectar.</div>
       </div>
     </div>
@@ -398,8 +383,8 @@ input:focus,select:focus{border-color:var(--text2);}
 
   <div class="tab-content" id="tab-historial">
     <div class="card" style="margin-bottom:15px;">
-      <div class="card-title">Evolución Acumulada y Disponibilidad Real de Margen</div>
-      <div class="chart-container-large" style="height:250px;"><canvas id="capital-history-chart"></canvas></div>
+      <div class="card-title">Evolución Acumulada del Capital Depositado</div>
+      <div class="chart-container-large"><canvas id="capital-history-chart"></canvas></div>
     </div>
     <div class="card" style="padding:0; overflow:hidden;">
       <div class="tbl-wrap">
@@ -461,6 +446,7 @@ input:focus,select:focus{border-color:var(--text2);}
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 // ── CONFIGURACIÓN INICIAL & TEMA ──
 const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -502,7 +488,7 @@ function updateChartsTheme() {
   renderCapitalPie(mUsed, mFree);
 }
 
-// ── FIREBASE INITIALIZATION ──
+// ── FIREBASE CONFIG ──
 const firebaseConfig={
   apiKey:"AIzaSyDK1fv8aUhRdUDW-Z9XQF7sd7OiIqrx5tQ",
   authDomain:"qf-risk-tracker.firebaseapp.com",
@@ -515,7 +501,7 @@ firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth();
 const db=firebase.firestore();
 
-// ── ENGINE STATES ──
+// ── ESTADO GLOBAL ──
 let trades=[];
 let capitals=[];
 let btcPrice=null;
@@ -526,10 +512,11 @@ let btcOhlcv=[];
 let indicators={ema20:true,ema50:true,ema200:true};
 let currentTf='1w';
 
-// Gráficos Estructurales
+// Instancias de Gráficos
 let lwChart=null;
-let survInst=null, dcaInst=null, tradesMixInst=null, capPieInst=null, capHistInst=null, marginPosInst=null, bufferInst=null, levTimelineInst=null;
+let survInst=null, dcaInst=null, tradesMixInst=null, capPieInst=null, capHistInst=null, marginPosInst=null;
 
+// ── AUTH ──
 const errBox=document.getElementById('auth-error');
 function showErr(m){errBox.textContent=m;setTimeout(()=>errBox.textContent='',4000);}
 
@@ -544,7 +531,8 @@ async function signInEmail(){
   try{await auth.signInWithEmailAndPassword(e,p);}catch{showErr('Credenciales incorrectas');}
 }
 async function signInGoogle(){
-  try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}catch(e){showErr('Error con Google: '+e.message);}
+  try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
+  catch(e){showErr('Error con Google: '+e.message);}
 }
 function logOut(){auth.signOut();}
 
@@ -563,6 +551,7 @@ auth.onAuthStateChanged(async user=>{
   }
 });
 
+// ── DATABASE ──
 async function loadData(){
   const user=auth.currentUser; if(!user)return;
   try{
@@ -570,36 +559,38 @@ async function loadData(){
     if(doc.exists){
       trades=doc.data().trades||[];
       capitals=doc.data().capitals||[];
-    }
+    }else{trades=[]; capitals=[];}
   }catch(e){console.error(e);}
 }
 async function pushToDatabase(){
   const user=auth.currentUser; if(!user)return;
-  try{await db.collection('users').doc(user.uid).set({trades,capitals});}catch(e){alert('Error guardando datos: '+e.message);}
+  try{await db.collection('users').doc(user.uid).set({trades,capitals});}
+  catch(e){alert('Error guardando datos: '+e.message);}
 }
 
-// ── MATH MATRICES & CRITIC RATIOS ──
+// ── MATH / METRICS ──
 const f=(n,d=0)=>'$'+Number(n.toFixed(d)).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 const fN=(n,d=2)=>Number(n.toFixed(d)).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const MAINT=0;
 
-function liqIndiv(entry,lev){return lev>0?entry*(1-1/lev):0;}
+function liqIndiv(entry,lev){return entry*(1-1/lev+MAINT);}
 
 function metrics(){
   const tradeCap=trades.reduce((s,t)=>s+t.capital,0);
   const extraCap=capitals.reduce((s,c)=>s+c.amount,0);
   const cap=tradeCap+extraCap;
   const pos=trades.reduce((s,t)=>s+t.position,0);
-  
-  let sumPosOverEntry=trades.reduce((s,t)=>s+t.position/t.entry,0);
-  const avg=sumPosOverEntry>0?pos/sumPosOverEntry:0;
+  const avg=pos>0?trades.reduce((s,t)=>s+t.entry*t.position,0)/pos:0;
   const lev=cap>0?pos/cap:0;
   
+  let sumPosOverEntry=trades.reduce((s,t)=>s+t.position/t.entry,0);
   const liq=sumPosOverEntry>0?(pos-cap)/sumPosOverEntry:0;
   const mUsed=trades.reduce((s,t)=>s+t.position/t.leverage,0);
-  const mFree=Math.max(0, cap-mUsed);
-  return{cap,tradeCap,extraCap,pos,avg,lev,liq: Math.max(0, liq),mUsed,mFree};
+  const mFree=cap-mUsed;
+  return{cap,tradeCap,extraCap,pos,avg,lev,liq,mUsed,mFree};
 }
 
+// ── NAVEGACIÓN (TABS) ──
 function setTab(name,btn){
   activeTab=name;
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
@@ -618,7 +609,23 @@ function goTab(name){
   if(btn) setTab(name, btn);
 }
 
+// ── MODALS ──
+function openCapitalModal(){
+  document.getElementById('cap-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('cap-amount').value='';
+  document.getElementById('cap-note').value='';
+  document.getElementById('modal-capital').classList.add('open');
+}
+function openTradeModal(){
+  editingId=null;
+  document.getElementById('trade-modal-title').textContent='+ Registrar Nuevo Trade';
+  document.getElementById('btn-submit').textContent='+ Registrar Trade';
+  resetForm();
+  selectCapitalType('existing');
+  document.getElementById('modal-trade').classList.add('open');
+}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>{ o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}); });
 
 function selectCapitalType(type){
   selectedCapitalType=type;
@@ -627,12 +634,13 @@ function selectCapitalType(type){
   const {mFree}=metrics();
   const note=document.getElementById('capital-type-note');
   if(type==='existing'){
-    note.innerHTML=`<span style="color:var(--text); font-weight:600;">ℹ Capital Existente:</span> Consume de tus fondos libres en wallet: <strong>${f(mFree)}</strong>`;
+    note.innerHTML=`<span style="color:var(--text); font-weight:600;">ℹ Capital Existente:</span> Consume margen libre actual. Disponible en wallet: <strong>${f(mFree)}</strong>`;
   }else{
-    note.innerHTML=`<span style="color:var(--green); font-weight:600;">✓ Nuevo Depósito:</span> Sumará colateral fresco y se asignará directo a la cuenta.`;
+    note.innerHTML=`<span style="color:var(--green); font-weight:600;">✓ Nuevo Depósito:</span> Suma fondos reales a la cuenta y ejecuta el trade.`;
   }
 }
 
+// ── OPERACIONES CRUD ──
 async function saveCapital(){
   const amount=parseFloat(document.getElementById('cap-amount').value);
   const date=document.getElementById('cap-date').value;
@@ -645,7 +653,7 @@ async function saveCapital(){
 }
 
 async function delCapital(id){
-  if(!confirm('¿Eliminar registro colateral?'))return;
+  if(!confirm('¿Eliminar este depósito permanentemente?'))return;
   capitals=capitals.filter(c=>c.id!==id);
   await pushToDatabase();
   render();
@@ -662,19 +670,17 @@ async function saveTrade(){
   const capital=parseFloat(document.getElementById('inp-capital').value);
   const position=parseFloat(document.getElementById('inp-position').value);
   const entry=parseFloat(document.getElementById('inp-entry').value);
-  if(!date||isNaN(position)||position<=0||isNaN(entry)||entry<=0)
-    return alert('Completá los campos operativos obligatorios.');
-    
+  if(!date||isNaN(capital)||capital<0||isNaN(position)||position<=0||isNaN(entry)||entry<=0)
+    return alert('Completá todos los campos con valores numéricos válidos.');
+  const leverage=capital>0?position/capital:0;
   const isNewDeposit=selectedCapitalType==='new';
-  const realCapital=isNewDeposit ? capital : 0;
-  const leverage=isNewDeposit ? (realCapital>0?position/realCapital:5) : 5;
 
   if(editingId){
     const idx=trades.findIndex(t=>t.id===editingId);
-    if(idx!==-1)trades[idx]={...trades[idx],date,capital:realCapital,position,entry,leverage,isNewDeposit};
+    if(idx!==-1)trades[idx]={...trades[idx],date,capital,position,entry,leverage,isNewDeposit};
     editingId=null;
   }else{
-    trades.push({id:Date.now(),date,capital:realCapital,position,entry,leverage,isNewDeposit});
+    trades.push({id:Date.now(),date,capital,position,entry,leverage,isNewDeposit});
   }
   await pushToDatabase();
   closeModal('modal-trade');
@@ -692,70 +698,89 @@ function editTrade(id){
   document.getElementById('inp-entry').value=t.entry;
   autoCalcLev();
   selectCapitalType(t.isNewDeposit?'new':'existing');
+  document.getElementById('trade-modal-title').textContent='Editar Trade';
+  document.getElementById('btn-submit').textContent='Guardar Cambios';
   document.getElementById('modal-trade').classList.add('open');
 }
 
-function cancelEdit(){ editingId=null; resetForm(); }
+function cancelEdit(){
+  editingId=null;
+  resetForm();
+}
+
 function resetForm(){
   ['inp-capital','inp-position','inp-entry'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('inp-lev-display').value='0x';
 }
 
 async function delTrade(id){
-  if(!confirm('¿Eliminar trade de la matriz de riesgo?'))return;
+  if(!confirm('¿Estás seguro de eliminar este trade del registro?'))return;
   trades=trades.filter(t=>t.id!==id);
   await pushToDatabase();
   render();
 }
 
-// ── COMPILADOR DE INTERFAZ Y RENDERIZADO NETO ──
+// ── RENDERIZADO PRINCIPAL ──
 function render(){
   const {cap,pos,avg,lev,liq,mUsed,mFree}=metrics();
+  
+  // Renderizar Pie Chart siempre, ahora pasará el update de los labels
   renderCapitalPie(mUsed, mFree);
   
   if(activeTab === 'grafico') renderMiniCharts();
   if(activeTab === 'historial') { renderCapitalHistoryChart(); renderCapitalHistory(); }
 
   if(!trades.length && !capitals.length){
-    ['m-cap','m-pos','m-avg'].forEach(id=>document.getElementById(id).textContent='$0');
+    document.getElementById('m-cap').textContent='$0';
+    document.getElementById('m-pos').textContent='$0';
+    document.getElementById('m-avg').textContent='$0';
     document.getElementById('m-pnl').textContent='—';
-    document.getElementById('trades-body').innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:2.5rem;">No hay pasivos operativos.</td></tr>';
+    document.getElementById('m-pnl-sub').textContent='Esperando datos';
+    document.getElementById('trades-body').innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:2.5rem;">No hay operaciones en el registro.</td></tr>';
+    document.getElementById('trades-foot').innerHTML='';
     return;
   }
   
   const ref=btcPrice||avg;
+
   document.getElementById('m-cap').textContent=f(cap);
   document.getElementById('m-pos').textContent=f(pos);
   document.getElementById('m-avg').textContent=f(avg);
 
   if(btcPrice!=null){
     document.getElementById('m-btc').textContent=f(btcPrice);
-    const pnl = pos>0?((btcPrice-avg)/avg)*pos:0;
-    const pnlPct = cap>0?(pnl/cap)*100:0;
+    
+    const pnl = (pos > 0 && avg > 0) ? (btcPrice-avg)/avg*pos : 0;
+    const pnlPct = cap > 0 ? (pnl/cap*100) : 0;
     
     const el=document.getElementById('m-pnl');
     el.textContent=pos>0?(pnl>=0?'+':'')+f(pnl):'$0';
     el.style.color=pnl>=0?'var(--green)':'var(--red)';
-    document.getElementById('m-pnl-sub').textContent=pos>0?(pnlPct>=0?'+':'')+pnlPct.toFixed(2)+'% s/ Margen Real':'Sin pasivos';
+    document.getElementById('m-pnl-sub').textContent=pos>0?(pnlPct>=0?'+':'')+pnlPct.toFixed(2)+'% sobre cap. total':'Sin posición';
   }
 
-  const dist=(ref>0 && liq>0) ? ((ref-liq)/ref)*100 : (pos===0 ? 100 : 0);
-  document.getElementById('c-liq').textContent=pos>0?f(liq):'—';
-  document.getElementById('c-liq-dist').textContent=pos>0 ? (btcPrice?dist.toFixed(1)+'% por debajo del spot':'Calculando entrada...') : 'Riesgo inactivo';
+  const dist=(ref>0 && liq>0) ? (ref-liq)/ref*100 : (pos===0 ? 100 : 0);
+  document.getElementById('c-liq').textContent=f(liq);
+  document.getElementById('c-liq-dist').textContent=pos>0 ? (btcPrice?dist.toFixed(1)+'% de distancia al precio':'Basado en entrada promedio') : 'No aplica';
   
   const danger=dist<5,warn=dist<15;
   const bar=document.getElementById('liq-bar');
-  bar.style.width=pos>0?Math.min(100,Math.max(0,100-dist))+'%':'0%';
+  bar.style.width=Math.min(100,Math.max(0,100-dist))+'%';
   bar.style.background=pos>0?(danger?'var(--red)':warn?'var(--amber)':'var(--green)'):'var(--bg3)';
   
-  document.getElementById('c-liq-note').textContent=pos>0?(danger?'⚠ LIQUIDACIÓN INMINENTE':'✓ Margen Cómodo'):'Cero Riesgo';
+  document.getElementById('c-liq-note').textContent=pos>0?(danger?'⚠ Riesgo Extremo — Inminente':warn?'△ Riesgo Alto — Evaluar inyección':'✓ Zona Segura'):'Cero Riesgo';
   document.getElementById('c-liq-note').style.color=pos>0?(danger?'var(--red)':warn?'var(--amber)':'var(--green)'):'var(--text3)';
 
   document.getElementById('c-lev').textContent=fN(lev,2)+'x';
-  let tagsHtml=trades.slice(0,3).map(t=>`<span class="tag ${t.leverage<=5?'tag-green':t.leverage<=10?'tag-amber':'tag-red'}">x${Number((t.position/(t.capital||1)).toFixed(1))} · ${f(t.position)}</span>`).join('');
-  document.getElementById('lev-tags').innerHTML=tagsHtml||'<span class="note">Pool Inactivo</span>';
+  let tagsHtml=trades.slice(0,3).map(t=>`<span class="tag ${t.leverage<=5?'tag-green':t.leverage<=10?'tag-amber':'tag-red'}">x${Number(t.leverage.toFixed(1))} · ${f(t.position)}</span>`).join('');
+  if(trades.length>3)tagsHtml+=`<span class="tag" style="background:var(--bg3);color:var(--text2);">+${trades.length-3} más</span>`;
+  document.getElementById('lev-tags').innerHTML=tagsHtml||'<span class="note">Sin apalancamiento activo</span>';
 
   const slInput=document.getElementById('sl-pct');
+  const maxLossPct=cap>0?Math.min(Math.floor(lev*100),500):100;
+  slInput.min=-maxLossPct;
+  if(parseInt(slInput.value)<-maxLossPct)slInput.value=-maxLossPct;
   const pnlPctVal=parseInt(slInput.value);
   const slPct=Math.abs(pnlPctVal)/100;
   const slLoss=cap*slPct;
@@ -763,302 +788,320 @@ function render(){
   
   document.getElementById('sl-pct-out').textContent=pnlPctVal+'%';
   document.getElementById('c-sl').textContent=pos>0?f(slPx):'$0';
-  document.getElementById('sl-loss').innerHTML=pos>0?f(slLoss):'$0';
+  
+  if(slPct<=1){
+    document.getElementById('c-sl-note').textContent=`Cerrar todo si el P&L baja un ${pnlPctVal}% del equity`;
+    document.getElementById('sl-loss').innerHTML=f(slLoss);
+  }else{
+    const extra=slLoss-cap;
+    document.getElementById('c-sl-note').textContent='Margen insuficiente para soportar esta caída';
+    document.getElementById('sl-loss').innerHTML=`${f(slLoss)} <span style="color:var(--red)">(Inyectar +${f(extra)})</span>`;
+  }
+
+  document.getElementById('a-danger').classList.remove('show');
+  document.getElementById('a-warn').classList.remove('show');
+  if(btcPrice!=null && pos>0){
+    if(dist<5)document.getElementById('a-danger').classList.add('show');
+    else if(dist<15){document.getElementById('a-warn').classList.add('show');document.getElementById('a-dist').textContent=dist.toFixed(1);}
+  }
 
   renderTrades();
   if(activeTab==='estrategia')calcEstrategia();
 }
 
+// ── TABLA DE TRADES ──
 function renderTrades(){
   const tbody=document.getElementById('trades-body');
   const tfoot=document.getElementById('trades-foot');
   tbody.innerHTML='';
-  if(!trades.length){ tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:3rem;">Pool libre de trades activos.</td></tr>'; tfoot.innerHTML=''; return; }
   
-  trades.forEach(t=>{
-    const currentLev = t.capital>0?t.position/t.capital:5;
-    const liq=liqIndiv(t.entry,currentLev);
-    const pnl=btcPrice!=null?((btcPrice-t.entry)/t.entry)*t.position:null;
+  if(!trades.length){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:3rem;">No hay trades registrados. Click en "+ Trade" para comenzar.</td></tr>';
+    tfoot.innerHTML='';
+    return;
+  }
+  
+  trades.forEach((t, i)=>{
+    const liq=liqIndiv(t.entry,t.leverage);
+    const pnl=btcPrice!=null?(btcPrice-t.entry)/t.entry*t.position:null;
+    const isNew=t.isNewDeposit;
+    const tr=document.createElement('tr');
+    
     const pnlStyleColor = pnl == null ? 'var(--text3)' : (pnl >= 0 ? 'var(--green)' : 'var(--red)');
     
-    const tr=document.createElement('tr');
     tr.innerHTML=`
       <td style="color:var(--text)">${t.date}</td>
-      <td>${t.capital>0?f(t.capital):'—'}</td>
-      <td><span class="tag ${t.isNewDeposit?'tag-green':'tag-blue'}">${t.isNewDeposit?'Nuevo Dep.':'Mg. Libre'}</span></td>
+      <td>${f(t.capital)}</td>
+      <td><span class="tag ${isNew?'tag-green':'tag-blue'}">${isNew?'Nuevo Dep.':'Mg. Libre'}</span></td>
       <td style="color:var(--text);font-weight:500;">${f(t.position)}</td>
-      <td><span class="tag">x${Number(currentLev.toFixed(1))}</span></td>
+      <td><span class="tag ${t.leverage<=5?'tag-green':t.leverage<=10?'tag-amber':'tag-red'}">x${Number(t.leverage.toFixed(1))}</span></td>
       <td style="color:var(--text)">${f(t.entry)}</td>
-      <td style="color:var(--red)">${t.capital>0?f(liq):'Cross Pool'}</td>
+      <td style="color:var(--red)">${f(liq)}</td>
       <td style="color:${pnlStyleColor}; font-weight:600;">${pnl==null?'—':(pnl>=0?'+':'')+f(pnl)}</td>
       <td>
-        <button class="btn-del" onclick="editTrade(${t.id})">✎</button>
-        <button class="btn-del red" onclick="delTrade(${t.id})">✕</button>
+        <button class="btn-del" onclick="editTrade(${t.id})" title="Editar">✎</button>
+        <button class="btn-del red" onclick="delTrade(${t.id})" title="Eliminar">✕</button>
       </td>`;
     tbody.appendChild(tr);
   });
   
   const{cap,pos,avg,lev,liq}=metrics();
-  const tot=btcPrice!=null?trades.reduce((s,t)=>s+((btcPrice-t.entry)/t.entry)*t.position,0):null;
+  const tot=btcPrice!=null?trades.reduce((s,t)=>s+(btcPrice-t.entry)/t.entry*t.position,0):null;
   tfoot.innerHTML=`<tr>
     <td>GLOBAL</td><td>${f(cap)}</td><td></td><td>${f(pos)}</td>
     <td><span class="tag tag-blue">${fN(lev,2)}x</span></td>
-    <td style="color:var(--amber)">${f(avg)}</td>
-    <td style="color:var(--red)">${f(liq)} ★</td>
+    <td>${f(avg)}</td>
+    <td style="color:var(--red)" title="Liquidación Global Quantfury">${f(liq)} ★</td>
     <td style="color:${tot==null?'var(--text3)':tot>=0?'var(--green)':'var(--red)'}">${tot==null?'—':(tot>=0?'+':'')+f(tot)}</td>
     <td></td></tr>`;
 }
 
+// ── HISTORIAL DE MOVIMIENTOS DE CAPITAL ──
 function renderCapitalHistory(){
-  const tbody=document.getElementById('capital-body');if(!tbody)return;
+  const tbody=document.getElementById('capital-body');
+  if(!tbody)return;
   const all=[
-    ...trades.filter(t=>t.isNewDeposit).map(t=>({id:t.id,date:t.date,type:'Depósito vía Trade',amount:t.capital,note:`Apertura exposición @ ${f(t.entry)}`,isTrade:true})),
-    ...capitals.map(c=>({id:c.id,date:c.date,type:'Depósito Directo',amount:c.amount,note:c.note,isTrade:false}))
-  ].sort((a,b)=>b.date.localeCompare(a.date));
+    ...trades.filter(t=>t.isNewDeposit).map(t=>({
+      id:t.id, date:t.date, type:'Depósito vía Trade', amount:t.capital,
+      note:`Apertura Trade x${Number(t.leverage.toFixed(1))} @ ${f(t.entry)}`, isTrade:true
+    })),
+    ...capitals.map(c=>({
+      id:c.id, date:c.date, type:'Depósito Directo', amount:c.amount,
+      note:c.note, isTrade:false
+    }))
+  ].sort((a,b)=>a.date.localeCompare(b.date));
 
-  if(!all.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:3rem;">Sin fondeos registrados.</td></tr>';return;}
+  if(!all.length){
+    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:3rem;">No hay registros de depósitos.</td></tr>';
+    return;
+  }
+  
   tbody.innerHTML=all.map(m=>`
     <tr>
       <td style="color:var(--text)">${m.date}</td>
       <td><span class="tag ${m.isTrade?'tag-blue':'tag-green'}">${m.type}</span></td>
       <td style="color:var(--green);font-weight:600;">+${f(m.amount)}</td>
       <td style="color:var(--text2)">${m.note||'—'}</td>
-      <td>${m.isTrade?'—':`<button class="btn-del red" onclick="delCapital(${m.id})">✕</button>`}</td>
+      <td>${m.isTrade?'<span style="color:var(--text3);font-size:.7rem;">Vinculado a trade</span>':`<button class="btn-del red" onclick="delCapital(${m.id})">Eliminar</button>`}</td>
     </tr>
   `).join('');
 }
 
-// ── CORRECCIÓN MATEMÁTICA: COMPOSICIÓN DINÁMICA DEL CAPITAL DEL POOL ──
+// ── RE-RENDER CAPITAL TIMELINE HISTOGRAM ──
 function renderCapitalHistoryChart() {
   const ctx = document.getElementById('capital-history-chart');
   if(!ctx) return;
   if (capHistInst) capHistInst.destroy();
 
-  const movements = [
-    ...trades.filter(t=>t.isNewDeposit).map(t=>({date:t.date, type:'trade', val:t.capital})),
-    ...capitals.map(c=>({date:c.date, type:'direct', val:c.amount}))
+  const allDeposits = [
+    ...trades.filter(t=>t.isNewDeposit).map(t=>({date:t.date, amount:t.capital})),
+    ...capitals.map(c=>({date:c.date, amount:c.amount}))
   ].sort((a,b)=>a.date.localeCompare(b.date));
 
-  if(!movements.length) return;
-  const dates = []; const netCapLine = []; const freeCapLine = [];
-  let currentTotalCapital = 0;
+  if(allDeposits.length === 0) return;
 
-  movements.forEach(m => {
-    currentTotalCapital += m.val;
-    dates.push(m.date);
-    netCapLine.push(currentTotalCapital);
+  const dates = [];
+  const cumulative = [];
+  let sum = 0;
+
+  allDeposits.forEach(d => {
+    sum += d.amount;
+    dates.push(d.date);
+    cumulative.push(sum);
   });
 
   capHistInst = new Chart(ctx.getContext('2d'), {
     type: 'line',
     data: {
       labels: dates,
-      datasets: [
-        { label: 'Margen Total Depositado', data: netCapLine, borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 2, pointRadius: 3, fill: true, tension: 0.1 },
-      ]
+      datasets: [{
+        label: 'Capital Total (USDT)',
+        data: cumulative,
+        borderColor: '#ffffff',
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderWidth: 2, pointRadius: 4, fill: true, tension: 0.1
+      }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { tooltip: { mode: 'index', intersect: false, callbacks: { label: c => ` ${c.dataset.label}: $${c.raw.toLocaleString()}` } } },
+      plugins: { legend: { display: false } },
       scales: {
-        x: { grid: { display: false }, ticks: { font: { family: getCssVar('--font-mono'), size: 10 } } },
-        y: { grid: { color: getCssVar('--grid-line') }, ticks: { font: { family: getCssVar('--font-mono'), size: 10 }, callback: v => '$'+v } }
+        x: { grid: { display: false }, ticks: { font: { family: getCssVar('--font-mono') } } },
+        y: { grid: { color: getCssVar('--grid-line') }, beginAtZero: true, ticks: { font: { family: getCssVar('--font-mono') }, callback: v => '$'+v } }
       }
     }
   });
 }
 
+// ── ALLOCATION DOUGHNUT ENGINE ──
 function renderCapitalPie(mUsed, mFree) {
-  const ctx = document.getElementById('cap-pie-chart'); if(!ctx)return;
+  // AQUI SE CORRIGE EL BUG DE LAS ETIQUETAS EXTERNAS
+  const elUsed = document.getElementById('lbl-used');
+  const elFree = document.getElementById('lbl-free');
+  if (elUsed) elUsed.textContent = f(mUsed);
+  if (elFree) elFree.textContent = f(mFree);
+
+  const ctx = document.getElementById('cap-pie-chart');
+  if(!ctx)return;
   if (capPieInst) capPieInst.destroy();
   
   if (mUsed === 0 && mFree === 0) {
     capPieInst = new Chart(ctx.getContext('2d'), {
       type: 'doughnut',
-      data: { datasets: [{ data: [1], backgroundColor: ['#1e293b'], borderWidth: 0 }] },
-      options: { cutout: '75%', plugins: { tooltip: { enabled: false } }, responsive: true, maintainAspectRatio: false }
+      data: { labels: ['Sin Datos'], datasets: [{ data: [1], backgroundColor: [getCssVar('--bg3')], borderWidth: 0 }] },
+      options: { cutout: '78%', plugins: { tooltip: { enabled: false }, legend: { display: false } }, responsive: true, maintainAspectRatio: false, animation:false }
     });
     return;
   }
 
-  // FIJADO COLOR: Sincronización cromática nítida
   capPieInst = new Chart(ctx.getContext('2d'), {
     type: 'doughnut',
     data: {
-      labels: ['Margen Retenido', 'Margen Disponible Libre'],
-      datasets: [{ data: [mUsed, mFree], backgroundColor: ['#ef4444', '#10b981'], borderWidth: 0 }]
+      labels: ['Margen Usado', 'Margen Libre'],
+      datasets: [{
+        data: [mUsed, mFree],
+        backgroundColor: [getCssVar('--red'), getCssVar('--green')],
+        borderWidth: 0, hoverOffset: 4
+      }]
     },
     options: {
-      cutout: '74%',
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.label}: $${c.raw.toLocaleString()}` } } },
+      cutout: '75%', animation: { duration: 400 },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.label + ': ' + f(c.raw) } } },
       responsive: true, maintainAspectRatio: false
     }
   });
-  document.getElementById('lbl-used').textContent = f(mUsed);
-  document.getElementById('lbl-free').textContent = f(mFree);
 }
 
-// ── FIJADO INTERACTIVIDAD Y CONFIGURACIÓN DE LOS 6 GRÁFICOS (3x2) ──
+// ── STRATEGY & RISK CHARTS GENERATION ──
 function renderMiniCharts(){
   const tabGrafico = document.getElementById('tab-grafico');
-  if(!tabGrafico || !tabGrafico.classList.contains('active') || !trades.length) return;
+  if(!tabGrafico || !tabGrafico.classList.contains('active')) return;
   
-  const{cap,pos,avg,liq,mUsed,mFree}=metrics();
-  if(pos===0) return;
+  if(!trades.length){
+    destroyChart(survInst); destroyChart(dcaInst); destroyChart(tradesMixInst); destroyChart(marginPosInst);
+    survInst=null; dcaInst=null; tradesMixInst=null; marginPosInst=null;
+    return;
+  }
+  
+  const{cap,pos,avg,liq}=metrics();
+  if(pos===0)return;
 
-  const monoFont = getCssVar('--font-mono');
-  const lineGrid = getCssVar('--grid-line');
+  const fontFamilyMono = getCssVar('--font-mono');
+  const gridColor = getCssVar('--grid-line');
 
-  // 1. SURVIVAL LINE (CON DETALLE FLOTANTE EN HOVER ACTIVADO)
+  // 1. SURVIVAL LINE
   const survCtx=document.getElementById('survival-chart').getContext('2d');
-  if(survInst) survInst.destroy();
+  if(survInst)survInst.destroy();
   const sPrices=[]; const sEquity=[];
-  const bottomPx = Math.max(0, liq - (avg * 0.1));
-  const step = (avg - bottomPx) / 12;
+  const bottomPx = Math.max(0, liq - (avg * 0.05));
+  const step = (avg - bottomPx) / 15;
   
-  for(let i=0; i<=12; i++){
+  for(let i=0; i<=15; i++){
     const p = avg - (step * i);
-    sPrices.push('$' + Math.round(p).toLocaleString());
+    sPrices.push('$' + Math.round(p/1000) + 'k');
     const pnl = ((p - avg) / avg) * pos;
-    sEquity.push(parseFloat(Math.max(0, cap + pnl).toFixed(0)));
+    const equity = Math.max(0, cap + pnl);
+    sEquity.push(parseFloat(equity.toFixed(0)));
   }
   
   survInst=new Chart(survCtx,{
     type:'line',
     data:{
       labels:sPrices,
-      datasets:[{ label: 'Equity Líquido', data: sEquity, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.06)', pointRadius: 2, hoverRadius: 5, borderWidth: 1.5, fill: true, tension: 0.15 }]
+      datasets:[{
+        label: 'Equity (USDT)', data: sEquity,
+        borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.05)',
+        pointRadius:0, borderWidth:2, fill:true, tension:0.2
+      }]
     },
     options:{
-      responsive:true, maintainAspectRatio:false,
-      interaction: { mode: 'index', intersect: false }, // Forzar hover continuo de eje vertical
-      plugins:{
-        legend:{display:false},
-        tooltip: { enabled: true, callbacks: { title: (items) => `Precio BTC: ${items[0].label}`, label: (c) => ` Equity: $${parseFloat(c.raw).toLocaleString()} USDT` } }
-      },
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
       scales:{
-        x:{ticks:{font:{family:monoFont, size:9}, maxTicksLimit:6}, grid:{color:lineGrid}},
-        y:{ticks:{font:{family:monoFont, size:9}, callback:v=>'$'+v}, grid:{color:lineGrid}}
+        x:{ticks:{font:{family:fontFamilyMono, size:10}, maxTicksLimit:8}, grid:{color:gridColor}},
+        y:{ticks:{font:{family:fontFamilyMono, size:11}, callback:v=>'$'+v}, grid:{color:gridColor}, min:0}
       }
     }
   });
 
-  // 2. MAPA DCA (BARRAS HORIZONTALES CON DEGRADADOS)
+  // 2. DCA HEATMAP PROXIES
   const dcaCtx=document.getElementById('dca-map-chart').getContext('2d');
-  if(dcaInst) dcaInst.destroy();
-  const sorted = [...trades].sort((a,b)=> a.entry - b.entry);
+  if(dcaInst)dcaInst.destroy();
+  const sortedTrades = [...trades].sort((a,b)=> a.entry - b.entry);
+  const dcaLabels = sortedTrades.map(t => '$' + Math.round(t.entry).toLocaleString());
+  const dcaData = sortedTrades.map(t => t.position);
 
   dcaInst=new Chart(dcaCtx,{
     type:'bar',
     data:{
-      labels: sorted.map(t => `$${Math.round(t.entry).toLocaleString()}`),
-      datasets:[{ label:'Exposición Nominal', data: sorted.map(t => t.position), backgroundColor:'rgba(245,158,11,0.4)', borderColor:'#f59e0b', borderWidth:1, borderRadius:3 }]
+      labels:dcaLabels,
+      datasets:[{
+        label:'Tamaño Posición', data:dcaData,
+        backgroundColor:'rgba(255,255,255,0.2)', borderColor:'#ffffff', borderWidth:1, borderRadius:2
+      }]
     },
     options:{
       indexAxis: 'y', responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:false}},
       scales:{
-        x:{ticks:{font:{family:monoFont, size:9}}, grid:{color:lineGrid}},
-        y:{ticks:{font:{family:monoFont, size:9}}, grid:{display:false}}
+        x:{ticks:{font:{family:fontFamilyMono, size:10}, callback:v=>'$'+(v/1000).toFixed(1)+'k'}, grid:{color:gridColor}},
+        y:{ticks:{font:{family:fontFamilyMono, size:11}}, grid:{display:false}}
       }
     }
   });
 
-  // 3. RELACIÓN MARGEN VS POSICIÓN
+  // 3. CAPITAL OWNED VS BORROWED DISTRIBUTION
   const mpCtx=document.getElementById('margin-pos-chart').getContext('2d');
-  if(marginPosInst) marginPosInst.destroy();
+  if(marginPosInst)marginPosInst.destroy();
+  const tLabels = trades.map((t,i)=>`T${i+1}`);
   
   marginPosInst=new Chart(mpCtx,{
     type:'bar',
     data:{
-      labels: trades.map((_,i)=>`T${i+1}`),
+      labels:tLabels,
       datasets:[
-        { label:'Margen Propio', data:trades.map(t=>t.capital), backgroundColor:'#10b981', borderRadius:3 },
-        { label:'Exposición Nominal', data:trades.map(t=>t.position), backgroundColor:'rgba(255,255,255,0.08)', borderColor:'#ffffff', borderWidth:1, borderRadius:3 }
+        { label:'Margen Propio', data:trades.map(t=>t.capital), backgroundColor:'#6b7280', borderRadius:2 },
+        { label:'Posición Total', data:trades.map(t=>t.position), backgroundColor:'rgba(255,255,255,0.1)', borderColor:'#ffffff', borderWidth:1, borderRadius:2 }
       ]
     },
     options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{labels:{boxWidth:12, font:{size:10}}}},
+      plugins:{legend:{position:'top'}},
       scales:{
-        x:{grid:{display:false}, ticks:{font:{family:monoFont, size:10}}},
-        y:{grid:{color:lineGrid}, ticks:{font:{family:monoFont, size:9}, callback:v=>'$'+v}}
+        x:{grid:{display:false}, ticks:{font:{family:fontFamilyMono, size:11}}},
+        y:{grid:{color:gridColor}, ticks:{font:{family:fontFamilyMono, size:10}, callback:v=>'$'+v}}
       }
     }
   });
 
-  // 4. MIX CHART EVOLUCIÓN HISTÓRICA
+  // 4. CHRONO ENTRIES
   const mixCtx=document.getElementById('trades-mix-chart').getContext('2d');
-  if(tradesMixInst) tradesMixInst.destroy();
+  if(tradesMixInst)tradesMixInst.destroy();
   const timeSorted = [...trades].sort((a,b)=> a.date.localeCompare(b.date));
+  const tDates = timeSorted.map((t,i)=>`T${i+1} (${t.date.substring(5)})`);
   
   tradesMixInst=new Chart(mixCtx,{
     type:'bar',
     data:{
-      labels: timeSorted.map((t,i)=>`T${i+1} (${t.date.substring(5)})`),
+      labels:tDates,
       datasets:[
-        { type:'line', label:'Entrada', data:timeSorted.map(t=>t.entry), borderColor:'#f59e0b', backgroundColor:'transparent', borderWidth:2, pointRadius:3, yAxisID:'y1' },
-        { type:'bar', label:'Nominal', data:timeSorted.map(t=>t.position), backgroundColor:'rgba(16,185,129,0.2)', borderColor:'#10b981', borderWidth:1, borderRadius:2, yAxisID:'y' }
+        {
+          type:'line', label:'P. Entrada', data:timeSorted.map(t=>t.entry),
+          borderColor:'#ffffff', backgroundColor:'#ffffff', borderWidth:2, yAxisID:'y1', pointRadius:4, tension:0.1
+        },
+        {
+          type:'bar', label:'Tamaño (USDT)', data:timeSorted.map(t=>t.position),
+          backgroundColor:'rgba(156,163,175,0.3)', borderColor:'#9ca3af', borderWidth:1, borderRadius:2, yAxisID:'y'
+        }
       ]
     },
     options:{
-      responsive:true, maintainAspectRatio:false,
+      responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
       plugins:{legend:{display:false}},
       scales:{
-        x:{grid:{display:false}, ticks:{font:{family:monoFont, size:9}}},
-        y:{type:'linear', position:'left', grid:{color:lineGrid}, ticks:{font:{family:monoFont, size:9}}},
-        y1:{type:'linear', position:'right', grid:{display:false}, ticks:{font:{family:monoFont, size:9}, callback:v=>'$'+(v/1000).toFixed(0)+'k'}}
-      }
-    }
-  });
-
-  // NUEVO 5: MARGEN LIBRE POR ESCENARIO (COMPLETA SIMETRÍA)
-  const bufferCtx = document.getElementById('margin-buffer-chart').getContext('2d');
-  if(bufferInst) bufferInst.destroy();
-  const bPrices = []; const bBuffer = [];
-  for(let i=0; i<=10; i++){
-    const p = avg * (1 - (i*0.03));
-    bPrices.push('-$' + (i*3) + '%');
-    const loss = ((p - avg) / avg) * pos;
-    bBuffer.push(Math.max(0, mFree + loss));
-  }
-  bufferInst = new Chart(bufferCtx, {
-    type: 'bar',
-    data: {
-      labels: bPrices,
-      datasets: [{ label: 'Margen Disponible', data: bBuffer, backgroundColor: 'rgba(59,130,246,0.3)', borderColor: '#3b82f6', borderWidth: 1, borderRadius: 2 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { family: monoFont, size: 9 } } },
-        y: { grid: { color: lineGrid }, ticks: { font: { family: monoFont, size: 9 } } }
-      }
-    }
-  });
-
-  // NUEVO 6: EVOLUCIÓN APALANCAMIENTO EFECTIVO (COMPLETA SIMETRÍA)
-  const levCtx = document.getElementById('leverage-timeline-chart').getContext('2d');
-  if(levTimelineInst) levTimelineInst.destroy();
-  let cumPos = 0; let cumCap = capitals.reduce((s,c)=>s+c.amount,0);
-  const levTimelineData = timeSorted.map(t => {
-    cumPos += t.position;
-    cumCap += t.capital;
-    return cumCap > 0 ? cumPos / cumCap : 0;
-  });
-  levTimelineInst = new Chart(levCtx, {
-    type: 'line',
-    data: {
-      labels: timeSorted.map((_,i)=>`Op.${i+1}`),
-      datasets: [{ label: 'Apalancamiento Histórico', data: levTimelineData, borderColor: '#ffffff', borderWidth: 2, pointRadius: 3, backgroundColor: 'transparent', tension: 0.1 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { family: monoFont, size: 9 } } },
-        y: { grid: { color: lineGrid }, ticks: { font: { family: monoFont, size: 9 }, callback: v => v+'x' } }
+        x:{grid:{display:false}, ticks:{font:{family:fontFamilyMono, size:10}}},
+        y:{type:'linear', display:true, position:'left', grid:{color:gridColor}, ticks:{font:{family:fontFamilyMono, size:10}}},
+        y1:{type:'linear', display:true, position:'right', grid:{drawOnChartArea:false}, ticks:{font:{family:fontFamilyMono, size:10}, callback:v=>'$'+(v/1000).toFixed(1)+'k'}}
       }
     }
   });
@@ -1066,7 +1109,7 @@ function renderMiniCharts(){
 
 function destroyChart(c){if(c)try{c.destroy();}catch{}}
 
-// ── ESTRATEGIA CALCULADORA ──
+// ── CALCULADORA DCA INTERACTIVA ──
 function calcEstrategia(){
   if(!trades.length&&!capitals.length)return;
   const{cap,pos,avg,liq}=metrics();
@@ -1126,23 +1169,35 @@ function calcEstrategia(){
   }
 }
 
+// ── LIVE STREAM API NODES ──
 async function fetchPrice(){
+  const btn=document.getElementById('btc-btn');
+  const txt=document.getElementById('btc-txt');
+  txt.textContent='Actualizando...';
+  btn.classList.remove('live');
   try{
     const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
     const d=await r.json();
     btcPrice=parseFloat(d.price);
-    document.getElementById('btc-txt').textContent='$'+Math.round(btcPrice).toLocaleString('en-US');
-    document.getElementById('btc-btn').classList.add('live');
+    txt.textContent='$'+Math.round(btcPrice).toLocaleString('en-US');
+    btn.classList.add('live');
     document.getElementById('m-btc').textContent=f(btcPrice);
-    
-    const rHist=await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=250`);
-    btcOhlcv=await rHist.json();
-    if(activeTab === 'grafico') initBTCChart();
-  }catch{ document.getElementById('btc-txt').textContent='Error API'; }
+  }catch{
+    txt.textContent='Error API';
+  }
   render();
 }
 
-async function fetchOHLCV(tf){ return btcOhlcv.map(k=>({ time:Math.floor(k[0]/1000),open:parseFloat(k[1]),high:parseFloat(k[2]),low:parseFloat(k[3]),close:parseFloat(k[4]) })); }
+async function fetchOHLCV(tf){
+  try{
+    const limit=450;
+    const r=await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${tf}&limit=${limit}`);
+    const data=await r.json();
+    return data.map(k=>({
+      time:Math.floor(k[0]/1000),open:parseFloat(k[1]),high:parseFloat(k[2]),low:parseFloat(k[3]),close:parseFloat(k[4])
+    }));
+  }catch{return[];}
+}
 
 function calcEMA(closes,period){
   const k=2/(period+1); const ema=[];
@@ -1162,9 +1217,23 @@ function changeTimeframe(tf, btn){
 }
 
 async function initBTCChart(){
-  const container=document.getElementById('btc-chart'); if(!container) return;
-  container.innerHTML=''; lwChart=null;
-  const ohlcv=await fetchOHLCV(currentTf); if(!ohlcv.length) return;
+  const container=document.getElementById('btc-chart');
+  container.innerHTML='<div style="color:var(--text3);font-family:var(--font-mono);font-size:.8rem;padding:3rem;text-align:center;">Descargando datos históricos...</div>';
+  lwChart=null; lwSeries={};
+
+  if(typeof LightweightCharts==='undefined'){
+    container.innerHTML='<div style="color:var(--red);font-family:var(--font-mono);font-size:.8rem;padding:2rem;text-align:center;">Error de CDN.</div>';
+    return;
+  }
+
+  const ohlcv=await fetchOHLCV(currentTf);
+  container.innerHTML=''; 
+
+  if(!ohlcv.length){
+    container.innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center;">API Offline.</div>';
+    return;
+  }
+  btcOhlcv=ohlcv;
   const closes=ohlcv.map(c=>c.close);
 
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
@@ -1181,27 +1250,47 @@ async function initBTCChart(){
     timeScale:{borderColor:gridColor, timeVisible:true},
   });
 
-  const candleSeries=lwChart.addCandlestickSeries({ upColor:getCssVar('--green'), downColor:getCssVar('--red'), borderUpColor:getCssVar('--green'), borderDownColor:getCssVar('--red'), wickUpColor:getCssVar('--green'), wickDownColor:getCssVar('--red') });
-  candleSeries.setData(ohlcv);
+  const candleSeries=lwChart.addCandlestickSeries({
+    upColor:getCssVar('--green'), downColor:getCssVar('--red'),
+    borderUpColor:getCssVar('--green'), borderDownColor:getCssVar('--red'),
+    wickUpColor:getCssVar('--green'), wickDownColor:getCssVar('--red')
+  });
+  candleSeries.setData(ohlcv.map(c=>({time:c.time,open:c.open,high:c.high,low:c.low,close:c.close})));
 
   if(indicators.ema20){
     const ema20=calcEMA(closes,20);
-    lwChart.addLineSeries({color:'#3b82f6',lineWidth:1,priceLineVisible:false,lastValueVisible:false}).setData(ohlcv.map((c,i)=>ema20[i]!=null?{time:c.time,value:ema20[i]}:null).filter(Boolean));
+    lwChart.addLineSeries({color:'#9ca3af',lineWidth:1,priceLineVisible:false,lastValueVisible:false})
+           .setData(ohlcv.map((c,i)=>ema20[i]!=null?{time:c.time,value:ema20[i]}:null).filter(Boolean));
   }
   if(indicators.ema50){
     const ema50=calcEMA(closes,50);
-    lwChart.addLineSeries({color:'#f59e0b',lineWidth:1,priceLineVisible:false,lastValueVisible:false}).setData(ohlcv.map((c,i)=>ema50[i]!=null?{time:c.time,value:ema50[i]}:null).filter(Boolean));
+    lwChart.addLineSeries({color:'#6b7280',lineWidth:1,priceLineVisible:false,lastValueVisible:false})
+           .setData(ohlcv.map((c,i)=>ema50[i]!=null?{time:c.time,value:ema50[i]}:null).filter(Boolean));
   }
   if(indicators.ema200){
     const ema200=calcEMA(closes,200);
-    lwChart.addLineSeries({color:'#8b5cf6',lineWidth:1.5,priceLineVisible:false,lastValueVisible:false}).setData(ohlcv.map((c,i)=>ema200[i]!=null?{time:c.time,value:ema200[i]}:null).filter(Boolean));
+    lwChart.addLineSeries({color:'#ffffff',lineWidth:1.5,priceLineVisible:false,lastValueVisible:false})
+           .setData(ohlcv.map((c,i)=>ema200[i]!=null?{time:c.time,value:ema200[i]}:null).filter(Boolean));
   }
+
+  if(trades.length){
+    const{avg,liq}=metrics();
+    if(avg>0){
+      candleSeries.createPriceLine({price:avg, color:getCssVar('--amber'), lineWidth:1, lineStyle:LightweightCharts.LineStyle.Dashed, axisLabelVisible:true, title:'AVG'});
+      candleSeries.createPriceLine({price:liq, color:getCssVar('--red'), lineWidth:2, axisLabelVisible:true, title:'LIQ'});
+    }
+  }
+
   lwChart.timeScale().fitContent();
 }
 
-function toggleInd(key,btn){ indicators[key]=!indicators[key]; btn.classList.toggle('on',indicators[key]); if(activeTab==='grafico')initBTCChart(); }
-function openTradeModal(){ editingId=null; resetForm(); selectCapitalType('existing'); document.getElementById('modal-trade').classList.add('open'); }
+function toggleInd(key,btn){
+  indicators[key]=!indicators[key];
+  btn.classList.toggle('on',indicators[key]);
+  if(activeTab==='grafico')initBTCChart();
+}
 
+// ── INITIALIZE ──
 document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
 document.getElementById('cap-date').value=new Date().toISOString().split('T')[0];
 </script>
