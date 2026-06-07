@@ -128,6 +128,7 @@ input:focus,select:focus{border-color:var(--border2);}
   .metrics{grid-template-columns:repeat(2,1fr);}
   .cards{grid-template-columns:1fr;}
   .form-grid,.est-grid{grid-template-columns:1fr;}
+  .header-actions { flex-direction: column; align-items: flex-end; gap: 5px; }
 }
 </style>
 </head>
@@ -153,10 +154,11 @@ input:focus,select:focus{border-color:var(--border2);}
       <h1>BTC/USDT — Risk Tracker</h1>
       <p>Long · Margen Cruzado · <span id="user-display" style="color:var(--text)"></span></p>
     </div>
-    <div style="display:flex; gap:10px;">
+    <div class="header-actions" style="display:flex; gap:10px;">
       <button class="btc-btn" id="btc-btn" onclick="fetchPrice()">
         <span class="dot"></span><span id="btc-txt">Actualizar</span>
       </button>
+      <button class="btc-btn" onclick="vincularOtraCuenta()">+ Vincular Cuenta</button>
       <button class="btc-btn" onclick="logOut()">Salir</button>
     </div>
   </div>
@@ -316,6 +318,16 @@ async function signInGoogle() {
 
 function logOut() {
   auth.signOut();
+}
+
+async function vincularOtraCuenta() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try {
+    await auth.currentUser.linkWithPopup(provider);
+    alert("¡Cuenta vinculada exitosamente! Ahora podés iniciar sesión con cualquiera de los dos correos y verás los mismos trades.");
+  } catch(e) {
+    alert("No se pudo vincular: " + e.message);
+  }
 }
 
 // Escuchar cambios de sesión
