@@ -3,49 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quantfury — BTC Risk Tracker</title>
-<!-- Favicon SVG generado por código con tu nombre -->
+<title>Quantfury — BTC Risk Tracker Pro</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23181818'/><text x='50' y='55' font-family='monospace' font-size='38' font-weight='bold' fill='%234ade80' text-anchor='middle' dominant-baseline='middle'>JEF</text></svg>">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-<!-- Firebase Compat SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 :root {
-  --bg:#0a0a0a; --bg2:#111; --bg3:#181818;
-  --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.15);
-  --text:#f0f0f0; --text2:#888; --text3:#555;
-  --green:#4ade80; --green-bg:rgba(74,222,128,0.08);
-  --red:#f87171;   --red-bg:rgba(248,113,113,0.08);
-  --amber:#fbbf24; --amber-bg:rgba(251,191,36,0.08);
-  --blue:#60a5fa;  --blue-bg:rgba(96,165,250,0.08);
+  --bg:#070708; --bg2:#121214; --bg3:#1a1a1e; --bg4:#26262b;
+  --border:rgba(255,255,255,0.06); --border2:rgba(255,255,255,0.14);
+  --text:#f1f1f3; --text2:#9a9a9f; --text3:#5c5c64;
+  --green:#4ade80; --green-bg:rgba(74,222,128,0.06);
+  --red:#f87171;   --red-bg:rgba(248,113,113,0.06);
+  --amber:#fbbf24; --amber-bg:rgba(251,191,36,0.06);
+  --blue:#60a5fa;  --blue-bg:rgba(96,165,250,0.06);
+  --purple:#c084fc;
   --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
-  --r:6px; --rl:10px;
+  --r:8px; --rl:12px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{font-size:14px;}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:300;line-height:1.6;min-height:100vh;}
-.shell{max-width:1120px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+html{font-size:14px;scroll-behavior: smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:300;line-height:1.5;min-height:100vh;}
+.shell{max-width:1280px;margin:0 auto;padding:1.5rem 1.5rem 3rem;}
 
 /* Header */
-.header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);}
-.header h1{font-family:var(--mono);font-size:1.15rem;font-weight:500;}
-.header p{font-size:.78rem;color:var(--text2);margin-top:3px;font-family:var(--mono);}
-.btc-btn{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:6px 12px;font-family:var(--mono);font-size:.82rem;color:var(--text2);cursor:pointer;transition:border-color .2s;}
-.btc-btn:hover{border-color:var(--border2);}
+.header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;padding-bottom:1.2rem;border-bottom:1px solid var(--border);}
+.header h1{font-family:var(--mono);font-size:1.3rem;font-weight:500;letter-spacing:-0.02em;}
+.header p{font-size:.8rem;color:var(--text2);margin-top:2px;font-family:var(--mono);}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+.btc-btn{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;font-family:var(--mono);font-size:.8rem;color:var(--text2);cursor:pointer;transition:all .2s;}
+.btc-btn:hover{border-color:var(--border2);color:var(--text);}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--text3);}
-.btc-btn.live .dot{background:var(--green);box-shadow:0 0 6px var(--green);}
+.btc-btn.live .dot{background:var(--green);box-shadow:0 0 8px var(--green);}
 
 /* Login Screen */
-#auth-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:80vh; }
-.auth-box { background:var(--bg2); border:1px solid var(--border); border-radius:var(--rl); padding:2.5rem; width:100%; max-width:380px; text-align:center; }
-.auth-box h2 { font-family:var(--mono); font-weight:500; margin-bottom:1.5rem; }
-.auth-box input { background:var(--bg3); border:1px solid var(--border); border-radius:var(--r); color:var(--text); font-family:var(--mono); font-size:.9rem; padding:10px 12px; width:100%; margin-bottom:12px; outline:none; }
+#auth-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:85vh; }
+.auth-box { background:var(--bg2); border:1px solid var(--border); border-radius:var(--rl); padding:2.5rem; width:100%; max-width:400px; box-shadow:0 20px 40px rgba(0,0,0,0.5); }
+.auth-box h2 { font-family:var(--mono); font-weight:500; margin-bottom:1.5rem; letter-spacing:-0.03em;}
+.auth-box input { background:var(--bg3); border:1px solid var(--border); border-radius:var(--r); color:var(--text); font-family:var(--mono); font-size:.9rem; padding:12px; width:100%; margin-bottom:12px; outline:none; transition:border .2s;}
 .auth-box input:focus { border-color:var(--border2); }
-.auth-btn { background:var(--text); color:var(--bg); font-family:var(--mono); font-weight:500; font-size:.9rem; padding:10px; width:100%; border:none; border-radius:var(--r); cursor:pointer; margin-bottom:10px; }
+.auth-btn { background:var(--text); color:var(--bg); font-family:var(--mono); font-weight:500; font-size:.9rem; padding:11px; width:100%; border:none; border-radius:var(--r); cursor:pointer; margin-bottom:10px; transition:opacity .2s;}
 .auth-btn:hover { opacity:.9; }
 .auth-btn.google { background:#ea4335; color:#fff; }
 .auth-btn.outline { background:transparent; border:1px solid var(--border); color:var(--text); }
@@ -54,178 +57,229 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:
 .divider::before, .divider::after { content:''; flex:1; border-bottom:1px solid var(--border); }
 .divider:not(:empty)::before { margin-right:.5em; }
 .divider:not(:empty)::after { margin-left:.5em; }
-#auth-error { color:var(--red); font-size:.8rem; margin-bottom:1rem; min-height:1rem; }
+#auth-error { color:var(--red); font-size:.8rem; margin-bottom:1rem; min-height:1rem; font-family:var(--mono); }
 
 /* Alerts */
-.alert{display:none;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r);font-family:var(--mono);font-size:.78rem;margin-bottom:1.25rem;border-left:3px solid;}
+.alert{display:none;align-items:center;gap:8px;padding:12px 16px;border-radius:var(--r);font-family:var(--mono);font-size:.8rem;margin-bottom:1.5rem;border-left:4px solid;}
 .alert.show{display:flex;}
 .alert-red{background:var(--red-bg);border-color:var(--red);color:var(--red);}
 .alert-amber{background:var(--amber-bg);border-color:var(--amber);color:var(--amber);}
 
+/* Dashboard Framework */
+.dashboard-layout { display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+@media (min-width: 1024px) {
+  .dashboard-layout { grid-template-columns: 2fr 1fr; }
+}
+
 /* Metrics */
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:1.25rem;}
-.metric{background:var(--bg2);padding:1.1rem 1.25rem;}
-.metric label{font-size:.65rem;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:5px;}
-.metric .val{font-family:var(--mono);font-size:1.3rem;font-weight:500;}
-.metric .sub{font-size:.68rem;color:var(--text3);margin-top:3px;font-family:var(--mono);}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:1.5rem;}
+.metric{background:var(--bg2);padding:1.2rem;}
+.metric label{font-size:.65rem;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:6px;}
+.metric .val{font-family:var(--mono);font-size:1.4rem;font-weight:500;}
+.metric .sub{font-size:.7rem;color:var(--text3);margin-top:4px;font-family:var(--mono);}
 
-/* Cards */
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.25rem;}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.2rem;}
-.card-title{font-size:.65rem;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.7rem;}
-.big{font-family:var(--mono);font-size:1.45rem;font-weight:500;}
-.note{font-size:.7rem;color:var(--text2);margin-top:5px;font-family:var(--mono);}
-.bar-wrap{height:4px;background:var(--bg3);border-radius:2px;margin-top:10px;overflow:hidden;}
-.bar{height:100%;border-radius:2px;transition:width .4s,background .4s;}
-.lev-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+/* Cards & Modules */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:1.5rem;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem; position: relative;}
+.card-title{font-size:.7rem;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;}
+.big{font-family:var(--mono);font-size:1.6rem;font-weight:500;}
+.note{font-size:.72rem;color:var(--text2);margin-top:6px;font-family:var(--mono);}
+.bar-wrap{height:5px;background:var(--bg3);border-radius:3px;margin-top:12px;overflow:hidden;}
+.bar{height:100%;border-radius:3px;transition:width .4s,background .4s;}
+.lev-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
 
-/* Tags */
-.tag{display:inline-block;font-size:.68rem;font-family:var(--mono);padding:2px 7px;border-radius:3px;font-weight:500;}
-.tag-green{background:var(--green-bg);color:var(--green);}
-.tag-amber{background:var(--amber-bg);color:var(--amber);}
-.tag-red{background:var(--red-bg);color:var(--red);}
-.tag-blue{background:var(--blue-bg);color:var(--blue);}
+/* Charts Container & Engine UI */
+.chart-container { background:var(--bg2); border:1px solid var(--border); border-radius:var(--rl); padding:1.25rem; display:flex; flex-direction:column; gap:12px; }
+.chart-controls { display:flex; gap:8px; flex-wrap:wrap; background:var(--bg3); padding:8px; border-radius:var(--r); border:1px solid var(--border); }
+.control-tag { display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:.72rem; background:var(--bg2); border:1px solid var(--border); padding:4px 8px; border-radius:4px; cursor:pointer; user-select:none; }
+.control-tag input { cursor:pointer; accent-color:var(--green); }
+.control-tag:hover { border-color:var(--border2); }
 
 /* SL slider */
-.sl-row{display:flex;align-items:center;gap:10px;margin:10px 0;}
-.sl-row label{font-size:.7rem;font-family:var(--mono);color:var(--text3);min-width:70px;}
-input[type=range]{flex:1;accent-color:var(--text);}
-.sl-row span{font-family:var(--mono);font-size:.82rem;font-weight:500;min-width:55px;text-align:right;}
+.sl-row{display:flex;align-items:center;gap:10px;margin:12px 0;}
+.sl-row label{font-size:.72rem;font-family:var(--mono);color:var(--text3);min-width:60px;}
+input[type=range]{flex:1;accent-color:var(--text); background:var(--bg4); height:4px; border-radius:2px; appearance:none;}
+.sl-row span{font-family:var(--mono);font-size:.85rem;font-weight:500;min-width:55px;text-align:right;}
 
 /* Tabs */
-.tabs{display:flex;gap:2px;margin-bottom:1.25rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:3px;width:fit-content;}
-.tab{background:transparent;border:none;color:var(--text2);font-size:.78rem;font-family:var(--mono);padding:6px 14px;border-radius:4px;cursor:pointer;transition:all .15s;}
-.tab.active{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
+.tabs{display:flex;gap:4px;margin-bottom:1.5rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:4px;width:fit-content;}
+.tab{background:transparent;border:none;color:var(--text2);font-size:.8rem;font-family:var(--mono);padding:6px 16px;border-radius:var(--r);cursor:pointer;transition:all .15s;}
+.tab.active{background:var(--bg3);color:var(--text);border:1px solid var(--border2);box-shadow:0 2px 8px rgba(0,0,0,0.2);}
 .tab-content{display:none;}
 .tab-content.active{display:block;}
 
 /* Tables */
 .tbl-wrap{overflow-x:auto;}
-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.76rem;}
-thead th{text-align:left;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:0 10px 9px;font-weight:400;border-bottom:1px solid var(--border);}
-tbody td{padding:10px 10px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle;}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.78rem;}
+thead th{text-align:left;font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:10px 12px;font-weight:400;border-bottom:1px solid var(--border);}
+tbody td{padding:12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle;}
 tbody tr:last-child td{border-bottom:none;}
 tbody tr:hover td{background:var(--bg3);}
-tfoot td{padding:9px 10px;font-weight:500;color:var(--text);border-top:1px solid var(--border2);}
+tfoot td{padding:12px;font-weight:500;color:var(--text);border-top:1px solid var(--border2); background:rgba(255,255,255,0.01);}
 
-/* Forms & Strategy layout */
-.form-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px;}
-.est-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-.est-section{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;}
-.est-title{font-family:var(--mono);font-size:.85rem;font-weight:500;margin-bottom:1rem;color:var(--text);}
-.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
-.fg label{font-size:.65rem;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;}
-input[type=text],input[type=number],input[type=date],select{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:.8rem;padding:7px 9px;width:100%;outline:none;transition:border-color .2s;}
+/* Forms & Structural Layouts */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;margin-bottom:16px;}
+.est-grid{display:grid;grid-template-columns:1fr;gap:20px;}
+@media (min-width:768px) { .est-grid { grid-template-columns: 1fr 1fr; } }
+.est-section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;}
+.est-title{font-family:var(--mono);font-size:.9rem;font-weight:500;margin-bottom:1rem;color:var(--text); display:flex; align-items:center; gap:6px;}
+.fg{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.fg label{font-size:.68rem;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;}
+input[type=text],input[type=number],input[type=date],select{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:.85rem;padding:9px 12px;width:100%;outline:none;transition:border-color .2s;}
 input:focus,select:focus{border-color:var(--border2);}
-.btn{background:var(--text);color:var(--bg);font-family:var(--mono);font-size:.8rem;font-weight:500;border:none;border-radius:var(--r);padding:9px 18px;cursor:pointer;width:100%;transition:opacity .15s;}
-.btn:hover{opacity:.85;}
-.btn-del{background:transparent;border:1px solid var(--border);color:var(--text3);font-family:var(--mono);font-size:.7rem;border-radius:4px;padding:3px 8px;cursor:pointer;transition:all .15s;}
+
+.radio-group { display:flex; gap:8px; margin-top:2px; }
+.radio-label { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:var(--bg3); border:1px solid var(--border); padding:8px; border-radius:var(--r); font-family:var(--mono); font-size:0.75rem; cursor:pointer; color:var(--text2); transition:all .15s;}
+.radio-group input { display:none; }
+.radio-group input:checked + .radio-label { background:var(--bg4); border-color:var(--blue); color:var(--text); font-weight:500; }
+
+.btn{background:var(--text);color:var(--bg);font-family:var(--mono);font-size:.85rem;font-weight:500;border:none;border-radius:var(--r);padding:10px 20px;cursor:pointer;width:100%;transition:all .15s; display:flex; align-items:center; justify-content:center; gap:6px;}
+.btn:hover{opacity:.9; transform:translateY(-1px);}
+.btn-secondary { background:transparent; border:1px solid var(--border); color:var(--text2); }
+.btn-secondary:hover { border-color:var(--border2); color:var(--text); }
+.btn-del{background:transparent;border:1px solid var(--border);color:var(--text3);font-family:var(--mono);font-size:.72rem;border-radius:4px;padding:4px 8px;cursor:pointer;transition:all .15s;}
 .btn-del:hover{border-color:var(--text);color:var(--text);}
 .btn-del.red:hover{border-color:var(--red);color:var(--red);}
 
-.result-box{font-family:var(--mono);font-size:.78rem;color:var(--text2);padding-top:10px;border-top:1px dashed var(--border);margin-top:10px;}
+.result-box{font-family:var(--mono);font-size:.8rem;color:var(--text2);padding-top:12px;border-top:1px dashed var(--border);margin-top:12px; line-height:1.6;}
 .result-box strong{color:var(--text);}
 
+/* Tags */
+.tag{display:inline-block;font-size:.68rem;font-family:var(--mono);padding:3px 8px;border-radius:4px;font-weight:500;}
+.tag-green{background:var(--green-bg);color:var(--green);}
+.tag-amber{background:var(--amber-bg);color:var(--amber);}
+.tag-red{background:var(--red-bg);color:var(--red);}
+.tag-blue{background:var(--blue-bg);color:var(--blue);}
+
+/* Mini charts layout */
+.ratio-visual { height: 8px; border-radius: 4px; overflow: hidden; display: flex; margin-top: 8px; background: var(--bg3); }
+
 /* Responsive */
-@media(max-width:800px){
+@media(max-width:900px){
   .metrics{grid-template-columns:repeat(2,1fr);}
   .cards{grid-template-columns:1fr;}
-  .form-grid,.est-grid{grid-template-columns:1fr;}
-  .header-actions { flex-direction: column; align-items: flex-end; gap: 5px; }
 }
 </style>
 </head>
 <body>
 
-<!-- PANTALLA DE AUTENTICACIÓN -->
 <div class="shell" id="auth-screen">
   <div class="auth-box">
-    <h2>Tracker Login</h2>
+    <h2 style="text-align:center; color:var(--text);">QF Risk Tracker <span style="color:var(--green); font-size:0.8rem; font-weight:normal; font-family:var(--mono);">v2.0</span></h2>
     <div id="auth-error"></div>
     <input type="email" id="email" placeholder="Correo electrónico">
     <input type="password" id="pass" placeholder="Contraseña">
     <button class="auth-btn" onclick="signInEmail()">Ingresar</button>
-    <button class="auth-btn outline" onclick="registerEmail()">Crear cuenta</button>
+    <button class="auth-btn outline" onclick="registerEmail()">Crear cuenta Pro</button>
     <div class="divider">O</div>
     <button class="auth-btn google" onclick="signInGoogle()">Continuar con Google</button>
   </div>
 </div>
 
-<!-- APLICACIÓN PRINCIPAL (Oculta al inicio) -->
 <div class="shell" id="app-screen" style="display:none;">
 
-  <!-- HEADER -->
   <div class="header">
     <div>
-      <h1>BTC/USDT — Risk Tracker</h1>
-      <p>Long · Margen Cruzado · <span id="user-display" style="color:var(--text)"></span></p>
+      <h1>Quantfury Portfolio Risk Tracker</h1>
+      <p>Modo Avanzado · Margen Cruzado · <span id="user-display" style="color:var(--blue)"></span></p>
     </div>
-    <div class="header-actions" style="display:flex; gap:10px;">
+    <div class="header-actions">
       <button class="btc-btn" id="btc-btn" onclick="fetchPrice()">
-        <span class="dot"></span><span id="btc-txt">Actualizar</span>
+        <span class="dot"></span><span id="btc-txt">Conectar API</span>
       </button>
       <button class="btc-btn" onclick="vincularOtraCuenta()">+ Vincular Cuenta</button>
-      <button class="btc-btn" onclick="logOut()">Salir</button>
+      <button class="btc-btn" onclick="logOut()" style="border-color:rgba(248,113,113,0.2)">Salir</button>
     </div>
   </div>
 
-  <!-- ALERTS -->
-  <div class="alert alert-red"   id="a-danger">⚠ Liquidación inminente — precio a menos del 5% del nivel de liquidación.</div>
-  <div class="alert alert-amber" id="a-warn">△ Margen reducido — liquidación a <span id="a-dist"></span>% del precio actual.</div>
+  <div class="alert alert-red"   id="a-danger">⚠ ALERTA CRÍTICA: Precio actual a menos del 5% de tu liquidación total de portafolio. Inyectar margen inmediatamente.</div>
+  <div class="alert alert-amber" id="a-warn">△ RIESGO DE MARGEN: Liquidación calculada a un <span id="a-dist"></span>% de distancia del mercado.</div>
 
-  <!-- MÉTRICAS -->
   <div class="metrics">
-    <div class="metric"><label>Capital depositado</label><div class="val" id="m-cap">$0</div><div class="sub">Total de la cuenta</div></div>
-    <div class="metric"><label>Posición total</label><div class="val" id="m-pos">$0</div><div class="sub">Tamaño apalancado</div></div>
-    <div class="metric"><label>Precio promedio</label><div class="val" id="m-avg">$0</div><div class="sub">Entry ponderado</div></div>
-    <div class="metric"><label>P&amp;L estimado</label><div class="val" id="m-pnl">—</div><div class="sub" id="m-pnl-sub">Esperando precio BTC</div></div>
+    <div class="metric"><label>Margen Total (Colateral)</label><div class="val" id="m-cap">$0</div><div class="sub" id="m-cap-sub">Depósitos + Trades asignados</div></div>
+    <div class="metric"><label>Exposición Nominal Total</label><div class="val" id="m-pos">$0</div><div class="sub" id="m-pos-sub">Tamaño global apalancado</div></div>
+    <div class="metric"><label>Precio de Entrada Medio</label><div class="val" id="m-avg">$0</div><div class="sub">Ponderación Armónica Equilibrada</div></div>
+    <div class="metric"><label>P&amp;L Neto Flotante</label><div class="val" id="m-pnl">—</div><div class="sub" id="m-pnl-sub">Cargando datos...</div></div>
   </div>
 
-  <!-- CARDS -->
-  <div class="cards">
-    <div class="card">
-      <div class="card-title">Liquidación exacta (Quantfury)</div>
-      <div class="big" id="c-liq" style="color:var(--red)">$0</div>
-      <div class="note" id="c-liq-dist">—</div>
-      <div class="bar-wrap"><div class="bar" id="liq-bar"></div></div>
-      <div class="note" id="c-liq-note" style="margin-top:8px;">—</div>
-    </div>
-    <div class="card">
-      <div class="card-title">Apalancamiento efectivo</div>
-      <div class="big" id="c-lev">0x</div>
-      <div class="note">Posición total / Capital depositado</div>
-      <div class="lev-tags" id="lev-tags"></div>
-      <div class="note" id="c-margin" style="margin-top:8px;">—</div>
-    </div>
-    <div class="card">
-      <div class="card-title">Simulador de Margen Libre</div>
-      <div class="big" id="c-sl" style="color:var(--amber)">$0</div>
-      <div class="note" id="c-sl-note">—</div>
-      <div class="sl-row" style="margin-top:12px;">
-        <label>Caída</label>
-        <input type="range" id="sl-pct" max="-1" value="-100" step="1" oninput="render()">
-        <span id="sl-pct-out" style="color:var(--red)">-100%</span>
+  <div class="dashboard-layout">
+    
+    <div class="chart-container">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <span style="font-family:var(--mono); font-size:0.85rem; font-weight:500; color:var(--text);">Análisis Avanzado e Indicadores On-Chain (BTC/USDT)</span>
+        <div class="chart-controls">
+          <label class="control-tag"><input type="checkbox" id="chk-ema20" checked onchange="updateChartIndicators()"> EMA 20</label>
+          <label class="control-tag"><input type="checkbox" id="chk-ema50" checked onchange="updateChartIndicators()"> EMA 50</label>
+          <label class="control-tag"><input type="checkbox" id="chk-ema200" checked onchange="updateChartIndicators()"> EMA 200</label>
+          <label class="control-tag"><input type="checkbox" id="chk-bb" checked onchange="updateChartIndicators()"> BBands</label>
+          <label class="control-tag"><input type="checkbox" id="chk-vwap" onchange="updateChartIndicators()"> VWAP</label>
+          <label class="control-tag"><input type="checkbox" id="chk-realized" checked onchange="updateChartIndicators()"> Realized Px</label>
+          <label class="control-tag"><input type="checkbox" id="chk-rainbow" onchange="updateChartIndicators()"> Rainbow</label>
+          <label class="control-tag"><input type="checkbox" id="chk-halvings" checked onchange="updateChartIndicators()"> Halvings</label>
+        </div>
       </div>
-      <div class="note">Pérdida en USDT: <strong id="sl-loss" style="color:var(--text)">$0</strong></div>
+      
+      <div style="position: relative; width:100%; height:340px;">
+        <canvas id="mainCryptoChart"></canvas>
+      </div>
+      <div style="position: relative; width:100%; height:110px; margin-top:-10px;">
+        <canvas id="oscillatorChart"></canvas>
+      </div>
     </div>
+
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="card">
+        <div class="card-title">LIQUIDACIÓN DE PORTAFOLIO <span>CROSS-MARGIN</span></div>
+        <div class="big" id="c-liq" style="color:var(--red)">$0</div>
+        <div class="note" id="c-liq-dist">Calculando distancia métrica...</div>
+        <div class="bar-wrap"><div class="bar" id="liq-bar"></div></div>
+        <div class="note" id="c-liq-note" style="margin-top:8px; font-weight:500;">—</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">MÉTRICAS DE APALANCAMIENTO Y CONTRASTE</div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <div class="big" id="c-lev">0.00x</div>
+          <span id="c-risk-reward" class="tag tag-blue" style="font-size:0.75rem;">R:R -.-</span>
+        </div>
+        <div class="note">Distribución del Riesgo Máximo Autorizado:</div>
+        <div class="ratio-visual" id="ratio-visual-bar">
+          <div style="width: 50%; background: var(--blue);" id="bar-v-free"></div>
+          <div style="width: 50%; background: var(--purple);" id="bar-v-used"></div>
+        </div>
+        <div class="note" id="c-margin" style="margin-top:8px; font-size:0.68rem; color:var(--text3);">—</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">SIMULADOR ESTRÁTEGICO DE DRAWDOWN</div>
+        <div class="big" id="c-sl" style="color:var(--amber)">$0</div>
+        <div class="note" id="c-sl-note">—</div>
+        <div class="sl-row">
+          <label>Estrés</label>
+          <input type="range" id="sl-pct" max="-1" value="-50" step="1" oninput="render()">
+          <span id="sl-pct-out" style="color:var(--red)">-50%</span>
+        </div>
+        <div class="note">Pérdida esperada de margen: <strong id="sl-loss" style="color:var(--text)">$0</strong></div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- TABS -->
   <div class="tabs">
-    <button class="tab active" id="tbtn-trades"    onclick="setTab('trades',this)">Trades</button>
-    <button class="tab"        id="tbtn-estrategia" onclick="setTab('estrategia',this)">Simulador de Estrategia</button>
-    <button class="tab"        id="tbtn-nuevo"     onclick="setTab('nuevo',this)">+ Nuevo trade</button>
+    <button class="tab active" id="tbtn-trades"     onclick="setTab('trades',this)">Posiciones Abiertas</button>
+    <button class="tab"        id="tbtn-deposits"   onclick="setTab('deposits',this)">Margen &amp; Balance</button>
+    <button class="tab"        id="tbtn-estrategia" onclick="setTab('estrategia',this)">Simulador DCA e Inyección</button>
+    <button class="tab"        id="tbtn-nuevo"      onclick="setTab('nuevo',this)">+ Registrar Operación</button>
   </div>
 
-  <!-- TAB: TRADES -->
   <div class="tab-content active" id="tab-trades">
     <div class="card">
       <div class="tbl-wrap">
         <table>
           <thead>
             <tr>
-              <th>Fecha</th><th>Capital</th><th>Posición</th><th>Lev.</th>
-              <th>Entrada</th><th>Liq. individual</th><th>P&amp;L</th><th>Acciones</th>
+              <th>Fecha</th><th>Origen Margen</th><th>Capital Asignado</th><th>Exposición Nominal</th><th>Leverage</th>
+              <th>Precio Entrada</th><th>Liq. Aislada</th><th>PnL Flotante</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody id="trades-body"></tbody>
@@ -235,51 +289,81 @@ input:focus,select:focus{border-color:var(--border2);}
     </div>
   </div>
 
-  <!-- TAB: ESTRATEGIA -->
+  <div class="tab-content" id="tab-deposits">
+    <div class="est-grid">
+      <div class="est-section">
+        <div class="est-title">💰 Inyectar Colateral Puro al Balance</div>
+        <div class="note" style="margin-bottom:12px;">Agregá capital libre de trade a tu cuenta. Esto aumenta directamente el margen libre y reduce drásticamente el precio de liquidación del portafolio.</div>
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="fg"><label>Fecha Inyección</label><input type="date" id="dep-date"></div>
+          <div class="fg"><label>Monto a Depositar (USDT)</label><input type="number" id="dep-amount" placeholder="500"></div>
+        </div>
+        <button class="btn" onclick="saveDeposit()">+ Ejecutar Depósito de Margen</button>
+      </div>
+      <div class="est-section">
+        <div class="est-title">🗂️ Historial de Inyecciones Directas</div>
+        <div class="tbl-wrap" style="max-height: 180px;">
+          <table>
+            <thead>
+              <tr><th>Fecha</th><th>Monto Colateral</th><th>Acción</th></tr>
+            </thead>
+            <tbody id="deposits-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="tab-content" id="tab-estrategia">
     <div class="est-grid">
       <div class="est-section">
-        <div class="est-title">🎯 Proyección de DCA (Bajar Promedio)</div>
-        <div class="note" style="margin-bottom:15px;">Calculá cuánto capital necesitás inyectar para llevar tu precio promedio actual a una meta específica.</div>
-        <div class="fg"><label>Promedio objetivo deseado ($)</label><input type="number" id="est-target-avg" placeholder="65000" oninput="calcEstrategia()"></div>
-        <div class="fg"><label>Precio de compra estimado ($)</label><input type="number" id="est-entry-px" placeholder="58000" oninput="calcEstrategia()"></div>
-        <div class="fg"><label>Apalancamiento a usar</label>
+        <div class="est-title">🎯 Proyección Estratégica DCA (Bajar Entrada)</div>
+        <div class="note" style="margin-bottom:15px;">Determina la exposición exacta y colateral requerido para mover de forma óptima el precio promedio armónico a un objetivo técnico viable.</div>
+        <div class="fg"><label>Precio de Entrada Objetivo ($)</label><input type="number" id="est-target-avg" placeholder="62000" oninput="calcEstrategia()"></div>
+        <div class="fg"><label>Precio de Entrada de la Próxima Orden ($)</label><input type="number" id="est-entry-px" placeholder="55000" oninput="calcEstrategia()"></div>
+        <div class="fg"><label>Apalancamiento de la Nueva Orden</label>
           <select id="est-lev" onchange="calcEstrategia()">
-            <option value="5" selected>x5</option><option value="10">x10</option><option value="20">x20</option>
+            <option value="3">x3</option><option value="5" selected>x5</option><option value="10">x10</option><option value="20">x20</option>
           </select>
         </div>
-        <div class="result-box" id="res-promedio">Ingresá los datos para simular tu próxima entrada.</div>
+        <div class="result-box" id="res-promedio">Ingresá los parámetros matemáticos para proyectar el DCA.</div>
       </div>
       <div class="est-section">
-        <div class="est-title">🛡️ Plan de Supervivencia (Drawdown)</div>
-        <div class="note" style="margin-bottom:15px;">Calculá exactamente cuánto margen extra debés tener listo en tu wallet si el precio se desploma abruptamente.</div>
-        <div class="fg"><label>Simular caída de BTC a ($)</label><input type="number" id="est-drop-px" placeholder="45000" oninput="calcEstrategia()"></div>
-        <div class="result-box" id="res-supervivencia" style="margin-top:20px; padding-top:15px;">Esperando escenario de precio...</div>
+        <div class="est-title">🛡️ Plan de Mitigación y Supervivencia Externa</div>
+        <div class="note" style="margin-bottom:15px;">Simulá escenarios de colapso extremo de mercado en Bitcoin para anticipar llamadas de margen.</div>
+        <div class="fg"><label>Precio de Caída Estresado de BTC ($)</label><input type="number" id="est-drop-px" placeholder="42000" oninput="calcEstrategia()"></div>
+        <div class="result-box" id="res-supervivencia" style="margin-top:20px; padding-top:15px;">Esperando definición de escenario...</div>
       </div>
     </div>
   </div>
 
-  <!-- TAB: NUEVO TRADE -->
   <div class="tab-content" id="tab-nuevo">
     <div class="card">
-      <div class="card-title" id="form-title">Registrar nuevo trade</div>
+      <div class="card-title" id="form-title">Registrar Nueva Operación de Cobertura / Exposición</div>
       <div class="form-grid">
-        <div class="fg"><label>Fecha</label><input type="date" id="inp-date"></div>
-        <div class="fg"><label>Capital dep. (USDT)</label><input type="number" id="inp-capital" placeholder="200" oninput="autoCalcLev()"></div>
-        <div class="fg"><label>Tamaño posición (USDT)</label><input type="number" id="inp-position" placeholder="1000" oninput="autoCalcLev()"></div>
-        <div class="fg"><label>Precio BTC entrada</label><input type="number" id="inp-entry" placeholder="65000"></div>
-        <div class="fg"><label>Apalancamiento (Auto)</label>
-          <input type="text" id="inp-lev-display" value="0x" readonly style="color:var(--blue); font-weight:500; cursor:not-allowed;">
+        <div class="fg"><label>Fecha Ejecución</label><input type="date" id="inp-date"></div>
+        <div class="fg"><label>Tamaño Nominal Posición (USDT)</label><input type="number" id="inp-position" placeholder="1000" oninput="autoCalcLev()"></div>
+        <div class="fg"><label>Precio de Entrada BTC</label><input type="number" id="inp-entry" placeholder="64500"></div>
+        <div class="fg">
+          <label>Asignación de Margen</label>
+          <div class="radio-group">
+            <input type="radio" id="margen-nuevo" name="margen-source" value="nuevo" checked onchange="toggleMargenSourceInput()">
+            <label for="margen-nuevo" class="radio-label">Nuevo Depósito</label>
+            <input type="radio" id="margen-cuenta" name="margen-source" value="cuenta" onchange="toggleMargenSourceInput()">
+            <label for="margen-cuenta" class="radio-label">Capital en Cuenta</label>
+          </div>
         </div>
+        <div class="fg" id="container-inp-capital"><label>Capital de Respaldo Fijo (USDT)</label><input type="number" id="inp-capital" placeholder="200" oninput="autoCalcLev()"></div>
+        <div class="fg" id="container-inp-lev-auto"><label>Leverage Inherente</label><input type="text" id="inp-lev-display" value="0x" readonly style="color:var(--blue); font-weight:600; cursor:not-allowed;"></div>
       </div>
       <div style="display:flex; gap:10px;">
-        <button class="btn" id="btn-submit" onclick="saveTrade()">+ Registrar trade</button>
-        <button class="btn" id="btn-cancel" onclick="cancelEdit()" style="display:none; background:var(--bg3); color:var(--text);">Cancelar edición</button>
+        <button class="btn" id="btn-submit" onclick="saveTrade()">+ Compilar e Inyectar Trade</button>
+        <button class="btn btn-secondary" id="btn-cancel" onclick="cancelEdit()" style="display:none;">Interrumpir Edición</button>
       </div>
     </div>
   </div>
 
-</div><!-- /shell -->
+</div>
 
 <script>
 // ── 1. CONFIGURACIÓN FIREBASE ─────────────────────────────────────────────────
@@ -289,131 +373,134 @@ const firebaseConfig = {
   projectId: "qf-risk-tracker",
   storageBucket: "qf-risk-tracker.firebasestorage.app",
   messagingSenderId: "839379386116",
-  appId: "1:839379386116:web:ce306e6ce6d1694681da51",
-  measurementId: "G-MVE6FG2HSV"
+  appId: "1:839379386116:web:ce306e6ce6d1694681da51"
 };
 
-// Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-// ── 2. ESTADO GLOBAL ──────────────────────────────────────────────────────────
-let trades    = [];
-let btcPrice  = null;
-let activeTab = 'trades';
-let editingId = null;
+// ── 2. ESTADO GLOBAL EXTENDIDO ────────────────────────────────────────────────
+let trades     = [];
+let deposits   = []; 
+let btcPrice   = null;
+let historicalKlines = [];
+let activeTab  = 'trades';
+let editingId  = null;
+let mainChartInstance = null;
+let oscChartInstance  = null;
 
 // ── 3. AUTENTICACIÓN ──────────────────────────────────────────────────────────
 const errBox = document.getElementById('auth-error');
-
-function showErr(msg) { errBox.textContent = msg; setTimeout(()=> errBox.textContent='', 4000); }
+function showErr(msg) { errBox.textContent = msg; setTimeout(()=> errBox.textContent='', 5000); }
 
 async function registerEmail() {
   const email = document.getElementById('email').value;
   const pass  = document.getElementById('pass').value;
-  if(!email || !pass) return showErr("Completa email y contraseña");
-  try { await auth.createUserWithEmailAndPassword(email, pass); } 
-  catch (e) { showErr(e.message); }
+  if(!email || !pass) return showErr("Completa los datos requeridos.");
+  try { await auth.createUserWithEmailAndPassword(email, pass); } catch (e) { showErr(e.message); }
 }
 
 async function signInEmail() {
   const email = document.getElementById('email').value;
   const pass  = document.getElementById('pass').value;
-  if(!email || !pass) return showErr("Completa email y contraseña");
-  try { await auth.signInWithEmailAndPassword(email, pass); } 
-  catch (e) { showErr("Credenciales incorrectas"); }
+  if(!email || !pass) return showErr("Ingresa las credenciales de acceso.");
+  try { await auth.signInWithEmailAndPassword(email, pass); } catch (e) { showErr("Error de autenticación o credenciales inválidas."); }
 }
 
 async function signInGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
-  try { await auth.signInWithPopup(provider); } 
-  catch (e) { showErr("Error con Google: " + e.message); }
+  try { await auth.signInWithPopup(provider); } catch (e) { showErr("Fallo de API de autenticación Google."); }
 }
 
-function logOut() {
-  auth.signOut();
-}
+function logOut() { auth.signOut(); }
 
 async function vincularOtraCuenta() {
   const provider = new firebase.auth.GoogleAuthProvider();
   try {
     await auth.currentUser.linkWithPopup(provider);
-    alert("¡Cuenta vinculada exitosamente! Ahora podés iniciar sesión con cualquiera de los dos correos y verás los mismos trades.");
-  } catch(e) {
-    alert("No se pudo vincular: " + e.message);
-  }
+    alert("Cuenta vinculada exitosamente de forma cruzada.");
+  } catch(e) { alert("Fallo de vinculación: " + e.message); }
 }
 
-// Escuchar cambios de sesión
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-screen').style.display = 'block';
-    document.getElementById('user-display').textContent = user.email || 'Cuenta Google';
-    await loadTrades();
-    fetchPrice(); // Actualiza precio y renderiza la UI
+    document.getElementById('user-display').textContent = user.email || 'Google Pro Node';
+    await loadDataCloud();
+    fetchPrice();
   } else {
     document.getElementById('auth-screen').style.display = 'flex';
     document.getElementById('app-screen').style.display = 'none';
-    trades = [];
+    trades = []; deposits = [];
   }
 });
 
-// ── 4. BASE DE DATOS (FIRESTORE) ──────────────────────────────────────────────
-async function loadTrades() {
+// ── 4. BASE DE DATOS (MIGRADA A MODELADO MULTI-VECTOR DE COLATERAL) ───────────
+async function loadDataCloud() {
   const user = auth.currentUser;
   if(!user) return;
   try {
     const doc = await db.collection('users').doc(user.uid).get();
-    if (doc.exists && doc.data().trades) {
-      trades = doc.data().trades;
+    if (doc.exists) {
+      const data = doc.data();
+      trades   = data.trades || [];
+      deposits = data.deposits || [];
+      
+      // Retrocompatibilidad de bases de datos
+      let legacyCapSum = trades.reduce((s,t) => s + (t.capital || 0), 0);
+      if(deposits.length === 0 && legacyCapSum > 0 && data.trades) {
+        // Mapear retrospectivamente capitales fijos iniciales
+        trades = trades.map(t => {
+          if(t.isFromAccount === undefined) t.isFromAccount = false; 
+          return t;
+        });
+      }
     } else {
-      trades = []; // Usuario nuevo, sin trades.
+      trades = []; deposits = [];
     }
-  } catch(e) {
-    console.error("Error al cargar trades:", e);
-  }
+  } catch(e) { console.error("Error crítico de sincronización Cloud:", e); }
 }
 
 async function pushToDatabase() {
   const user = auth.currentUser;
   if(!user) return;
   try {
-    await db.collection('users').doc(user.uid).set({ trades });
-  } catch(e) {
-    console.error("Error al guardar en la nube:", e);
-    alert("Hubo un error guardando los datos en la nube. Revisa tu conexión.");
-  }
+    await db.collection('users').doc(user.uid).set({ trades, deposits }, {merge: true});
+  } catch(e) { alert("Error al confirmar estado en base de datos."); }
 }
 
-// ── 5. LÓGICA DE LA APLICACIÓN ────────────────────────────────────────────────
+// ── 5. MOTOR ACTUARIAL DE CÁLCULO FINANCIERO Y LIQUIDACIÓN ────────────────────
 const f  = (n,d=0) => '$'+Number(n.toFixed(d)).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 const fN = (n,d=2) => Number(n.toFixed(d)).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
-const MAINT = 0; 
 
-function liqIndiv(entry, lev){ return entry * (1 - 1/lev + MAINT); }
-
-function liqPortfolio(list){
-  const pos = list.reduce((s,t)=>s+t.position,0);
-  if(pos === 0) return 0;
-  const cap = list.reduce((s,t)=>s+t.capital,0);
-  const avg = list.reduce((s,t)=>s+t.entry*t.position,0)/pos;
-  const maint = pos * MAINT;
-  return avg * (1 - (cap - maint) / pos);
-}
+function liqIndiv(entry, lev){ return entry * (1 - 1/lev); }
 
 function metrics(){
-  const cap   = trades.reduce((s,t)=>s+t.capital,0);
-  const pos   = trades.reduce((s,t)=>s+t.position,0);
-  const avg   = pos > 0 ? trades.reduce((s,t)=>s+t.entry*t.position,0)/pos : 0;
-  const lev   = cap > 0 ? pos/cap : 0;
-  const liq   = liqPortfolio(trades);
-  const mUsed = trades.reduce((s,t)=>s+t.position/t.leverage,0);
-  const mFree = cap - mUsed;
-  return {cap,pos,avg,lev,liq,mUsed,mFree};
+  // El colateral total real en cuenta es la suma de depósitos directos más trades configurados como aporte de nuevo depósito externo
+  const totalDirectDeposits = deposits.reduce((s,d)=> s + d.amount, 0);
+  const totalTradeInjections = trades.reduce((s,t)=> s + (t.isFromAccount ? 0 : t.capital), 0);
+  const cap = totalDirectDeposits + totalTradeInjections;
+  
+  const pos = trades.reduce((s,t)=> s + t.position, 0);
+  
+  // Promedio Armónico Ponderado de Entrada (Modelado estructural exacto de liquidación cruzada)
+  let sumTokens = trades.reduce((s,t)=> s + (t.position / t.entry), 0);
+  const avg = sumTokens > 0 ? pos / sumTokens : 0;
+  
+  const lev   = cap > 0 ? pos / cap : 0;
+  
+  // Liquidación de Portafolio estructural Cross-Margin real de Mercado
+  const liq = sumTokens > 0 ? (pos - cap) / sumTokens : 0;
+  
+  const mUsed = trades.reduce((s,t)=> s + (t.position / (t.leverage || 5)), 0);
+  const mFree = Math.max(0, cap - mUsed);
+  
+  return {cap,pos,avg,lev,liq: Math.max(0, liq),mUsed,mFree};
 }
 
+// ── 6. CONTROLADORES UI INTERACTIVOS ──────────────────────────────────────────
 function setTab(name, btn){
   activeTab = name;
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
@@ -428,176 +515,34 @@ function goTab(name){
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
-  document.getElementById('tbtn-'+name).classList.add('active');
+  const btn = document.getElementById('tbtn-'+name);
+  if(btn) btn.classList.add('active');
 }
 
-function render(){
-  if(!trades.length) {
-    document.getElementById('m-cap').textContent = "$0";
-    document.getElementById('m-pos').textContent = "$0";
-    document.getElementById('trades-body').innerHTML = `<tr><td colspan="8" style="text-align:center">No hay trades registrados. ¡Agrega tu primero!</td></tr>`;
-    return;
-  }
-  const {cap,pos,avg,lev,liq,mUsed,mFree} = metrics();
-  const ref = btcPrice || avg;
-
-  document.getElementById('m-cap').textContent = f(cap);
-  document.getElementById('m-pos').textContent = f(pos);
-  document.getElementById('m-avg').textContent = f(avg);
-
-  if(btcPrice != null){
-    const pnl    = (btcPrice-avg)/avg*pos;
-    const pnlPct = pnl/cap*100;
-    const el = document.getElementById('m-pnl');
-    el.textContent = (pnl>=0?'+':'')+f(pnl);
-    el.style.color = pnl>=0?'var(--green)':'var(--red)';
-    document.getElementById('m-pnl-sub').textContent = (pnlPct>=0?'+':'')+pnlPct.toFixed(2)+'% sobre capital';
-  }
-
-  const dist = (ref-liq)/ref*100;
-  document.getElementById('c-liq').textContent = f(liq);
-  document.getElementById('c-liq-dist').textContent = btcPrice ? dist.toFixed(1)+'% por debajo del precio actual' : 'Basado en precio de entrada promedio';
-  const danger=dist<10, warn=dist<20;
-  const bar = document.getElementById('liq-bar');
-  bar.style.width      = Math.min(100,Math.max(0,100-dist))+'%';
-  bar.style.background = danger?'var(--red)':warn?'var(--amber)':'var(--green)';
-  const note = document.getElementById('c-liq-note');
-  note.textContent = danger?'⚠ Riesgo ALTO':warn?'△ Precaución':'✓ Margen cómodo';
-  note.style.color = danger?'var(--red)':warn?'var(--amber)':'var(--green)';
-
-  document.getElementById('c-lev').textContent = fN(lev,1)+'x';
-  
-  let tagsHtml = trades.slice(0,4).map(t=> `<span class="tag ${t.leverage<=5?'tag-green':t.leverage<=7?'tag-amber':'tag-red'}">x${Number(t.leverage.toFixed(2))} · ${f(t.position)}</span>`).join('');
-  if (trades.length > 4) tagsHtml += `<span class="tag" style="background:var(--bg3)">+${trades.length - 4} trades</span>`;
-  document.getElementById('lev-tags').innerHTML = tagsHtml;
-  document.getElementById('c-margin').textContent = `Margen requerido por app: ${f(mUsed)} · Disponible extra: ${f(mFree)}`;
-
-  const slInput = document.getElementById('sl-pct');
-  const maxLossPct = Math.floor(lev * 100) || 100; 
-  slInput.min = -maxLossPct; 
-  if (parseInt(slInput.value) < -maxLossPct) slInput.value = -maxLossPct;
-
-  const pnlPctVal = parseInt(slInput.value); 
-  const slPct     = Math.abs(pnlPctVal) / 100;
-  const slLoss    = cap * slPct;
-  const slPx      = avg * (1 - slLoss / pos); 
-  
-  document.getElementById('sl-pct-out').textContent = pnlPctVal + '%';
-  document.getElementById('c-sl').textContent       = f(slPx);
-  
-  if (slPct <= 1) {
-    document.getElementById('c-sl-note').textContent = `Cerrar si el P&L llega a ${pnlPctVal}% del capital`;
-    document.getElementById('sl-loss').innerHTML     = f(slLoss);
+function toggleMargenSourceInput() {
+  const src = document.querySelector('input[name="margen-source"]:checked').value;
+  const capContainer = document.getElementById('container-inp-capital');
+  if(src === 'cuenta') {
+    capContainer.style.display = 'none';
+    document.getElementById('inp-capital').value = '0';
   } else {
-    const extraMargin = slLoss - cap;
-    document.getElementById('c-sl-note').textContent = `Para soportar esta caída debés inyectar margen`;
-    document.getElementById('sl-loss').innerHTML     = `${f(slLoss)} <span style="color:var(--red)">(Agregar ${f(extraMargin)})</span>`;
+    capContainer.style.display = 'block';
+    document.getElementById('inp-capital').value = '';
   }
-
-  document.getElementById('a-danger').classList.remove('show');
-  document.getElementById('a-warn').classList.remove('show');
-  if(btcPrice != null){
-    if(dist<5) document.getElementById('a-danger').classList.add('show');
-    else if(dist<15){ document.getElementById('a-warn').classList.add('show'); document.getElementById('a-dist').textContent = dist.toFixed(1); }
-  }
-
-  renderTrades();
-  if(activeTab==='estrategia') calcEstrategia();
-}
-
-function renderTrades(){
-  const tbody = document.getElementById('trades-body');
-  const tfoot = document.getElementById('trades-foot');
-  tbody.innerHTML = '';
-
-  trades.forEach(t=>{
-    const liq = liqIndiv(t.entry, t.leverage);
-    const pnl = btcPrice!=null ? (btcPrice-t.entry)/t.entry*t.position : null;
-    const [y,mo,d] = t.date.split('-');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="color:var(--text)">${d}/${mo}/${y}</td>
-      <td>${f(t.capital)}</td>
-      <td style="color:var(--text)">${f(t.position)}</td>
-      <td><span class="tag ${t.leverage<=5?'tag-green':t.leverage<=7?'tag-amber':'tag-red'}">x${Number(t.leverage.toFixed(2))}</span></td>
-      <td style="color:var(--text)">${f(t.entry)}</td>
-      <td style="color:var(--red)">${f(liq)}</td>
-      <td style="color:${pnl==null?'var(--text3)':pnl>=0?'var(--green)':'var(--red)'}">${pnl==null?'—':(pnl>=0?'+':'')+f(pnl)}</td>
-      <td style="white-space:nowrap;">
-        <button class="btn-del" onclick="editTrade(${t.id})" title="Editar" style="margin-right:4px;">✎</button>
-        <button class="btn-del red" onclick="delTrade(${t.id})" title="Eliminar">✕</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-
-  const {cap,pos,avg,lev,liq} = metrics();
-  const tot = btcPrice!=null ? trades.reduce((s,t)=>s+(btcPrice-t.entry)/t.entry*t.position,0) : null;
-  tfoot.innerHTML = `<tr>
-    <td>TOTAL</td><td>${f(cap)}</td><td>${f(pos)}</td>
-    <td><span class="tag tag-blue">${fN(lev,2)}x</span></td>
-    <td>${f(avg)}</td>
-    <td style="color:var(--red)" title="Liquidación real del portafolio">${f(liq)} ★</td>
-    <td style="color:${tot==null?'var(--text3)':tot>=0?'var(--green)':'var(--red)'}">${tot==null?'—':(tot>=0?'+':'')+f(tot)}</td>
-    <td></td></tr>`;
-}
-
-function calcEstrategia() {
-  if(!trades.length) return;
-  const {cap, pos, avg} = metrics();
-
-  const elTarg = document.getElementById('est-target-avg');
-  const elEntr = document.getElementById('est-entry-px');
-  const elLev  = document.getElementById('est-lev');
-  const resProm = document.getElementById('res-promedio');
-
-  if(elTarg && elEntr && elLev) {
-    const targ = parseFloat(elTarg.value);
-    const entr = parseFloat(elEntr.value);
-    const l    = parseFloat(elLev.value) || 5;
-
-    if (!targ || !entr) {
-      resProm.innerHTML = 'Ingresá los datos para simular tu próxima entrada.';
-    } else if (targ >= avg) {
-      resProm.innerHTML = `<span style="color:var(--red)">El promedio objetivo (${f(targ)}) debe ser MENOR al actual (${f(avg)}).</span>`;
-    } else if (entr >= targ) {
-      resProm.innerHTML = `<span style="color:var(--red)">Para bajar el promedio a ${f(targ)}, debés comprar más barato que eso.</span>`;
-    } else {
-      const newPos = pos * (avg - targ) / (targ - entr);
-      const newCap = newPos / l;
-      resProm.innerHTML = `Para bajar tu promedio a <strong>${f(targ)}</strong> comprando BTC a ${f(entr)}, necesitás agregar una posición de <strong>${f(newPos)}</strong>.<br><br>Esto requiere que inyectes <strong style="color:var(--green)">${f(newCap)} USDT</strong> de margen nuevo a x${l}. Tu portafolio total pasaría a ser de ${f(pos + newPos)}.`;
-    }
-  }
-
-  const elDrop = document.getElementById('est-drop-px');
-  const resSurv = document.getElementById('res-supervivencia');
-
-  if(elDrop) {
-    const drop = parseFloat(elDrop.value);
-    if (!drop) {
-      resSurv.innerHTML = 'Esperando escenario de precio...';
-    } else if (drop >= avg) {
-      resSurv.innerHTML = '<span style="color:var(--text3)">El precio ingresado no representa una caída desde el promedio.</span>';
-    } else {
-      const pnlDrop = (drop - avg) / avg * pos;
-      const isLiquidated = pnlDrop <= -cap;
-      let msg = `P&L flotante si BTC cae a ${f(drop)}: <strong style="color:var(--red)">${f(pnlDrop)} USDT</strong>.<br><br>`;
-      
-      if (isLiquidated) {
-        const extraNeeded = Math.abs(pnlDrop) - cap;
-        msg += `⚠ <strong>Riesgo de Liquidación Crítico.</strong> Debés transferir al menos <strong style="color:var(--red)">${f(extraNeeded)} USDT</strong> adicionales a la cuenta de Quantfury para que el trade sobreviva este nivel.`;
-      } else {
-        const spare = cap + pnlDrop;
-        msg += `<span style="color:var(--green)">✓ Tu capital actual sobrevive esta caída.</span> Te seguirían quedando ${f(spare)} de margen para aguantar.`;
-      }
-      resSurv.innerHTML = msg;
-    }
-  }
+  autoCalcLev();
 }
 
 function autoCalcLev() {
-  const cap = parseFloat(document.getElementById('inp-capital').value);
+  const src = document.querySelector('input[name="margen-source"]:checked').value;
   const pos = parseFloat(document.getElementById('inp-position').value);
   const levDisplay = document.getElementById('inp-lev-display');
+  
+  if(src === 'cuenta') {
+    levDisplay.value = 'Usa Pool Activo (Cross)';
+    return;
+  }
+  
+  const cap = parseFloat(document.getElementById('inp-capital').value);
   if (cap > 0 && pos > 0) {
     levDisplay.value = Number((pos / cap).toFixed(2)) + 'x';
   } else {
@@ -605,27 +550,210 @@ function autoCalcLev() {
   }
 }
 
-async function saveTrade(){
-  const date     = document.getElementById('inp-date').value;
-  const capital  = parseFloat(document.getElementById('inp-capital').value);
-  const position = parseFloat(document.getElementById('inp-position').value);
-  const entry    = parseFloat(document.getElementById('inp-entry').value);
+// ── 7. RENDERIZADO GENERAL SÍNCRONO DE LA INTERFAZ DE RIESGO ──────────────────
+function render(){
+  const {cap,pos,avg,lev,liq,mUsed,mFree} = metrics();
+  const ref = btcPrice || avg;
 
-  if(!date || isNaN(capital)||capital<=0 || isNaN(position)||position<=0 || isNaN(entry)||entry<=0){
-    return alert('Completá todos los campos con valores válidos.');
+  document.getElementById('m-cap').textContent = f(cap);
+  document.getElementById('m-pos').textContent = f(pos);
+  document.getElementById('m-avg').textContent = f(avg);
+  document.getElementById('m-cap-sub').textContent = `Libre en Wallet: ${f(mFree)}`;
+
+  if(btcPrice != null){
+    const pnl = avg > 0 ? ((btcPrice - avg) / avg) * pos : 0;
+    const pnlPct = cap > 0 ? (pnl / cap) * 100 : 0;
+    const el = document.getElementById('m-pnl');
+    el.textContent = (pnl>=0?'+':'')+f(pnl);
+    el.style.color = pnl>=0?'var(--green)':'var(--red)';
+    document.getElementById('m-pnl-sub').textContent = (pnlPct>=0?'+':'')+pnlPct.toFixed(2)+'% s/ Margen Real';
   }
 
-  const leverage = position / capital;
+  // Distancia métrica a liquidación general
+  const dist = ref > 0 ? ((ref - liq) / ref) * 100 : 0;
+  document.getElementById('c-liq').textContent = pos > 0 ? f(liq) : "$0";
+  document.getElementById('c-liq-dist').textContent = btcPrice && pos > 0 ? dist.toFixed(2)+'% por debajo del precio spot' : 'A la espera de apertura de exposición nominal';
+  
+  const danger = pos > 0 && dist < 7, warn = pos > 0 && dist < 18;
+  const bar = document.getElementById('liq-bar');
+  bar.style.width      = pos > 0 ? Math.min(100, Math.max(0, 100 - dist)) + '%' : '0%';
+  bar.style.background = danger ? 'var(--red)' : warn ? 'var(--amber)' : 'var(--green)';
+  
+  const note = document.getElementById('c-liq-note');
+  if(pos === 0) {
+    note.textContent = '✓ Sin Riesgo Operativo'; note.style.color = 'var(--text3)';
+  } else {
+    note.textContent = danger ? '⚠ RIESGO CRÍTICO EXTRAORDINARIO' : warn ? '△ REQUIERE MONITOREO / INYECTAR MARGEN' : '✓ Colateral Saludable';
+    note.style.color = danger ? 'var(--red)' : warn ? 'var(--amber)' : 'var(--green)';
+  }
+
+  // Apalancamiento Efectivo de Cuenta Completa
+  document.getElementById('c-lev').textContent = fN(lev,2)+'x';
+  
+  // Cálculo de Ratio de Cobertura Riesgo/Beneficio estimado macro
+  if(pos > 0 && btcPrice) {
+    const profitTarget = avg * 1.5; 
+    const riskAmount = Math.max(1, cap);
+    const potentialReward = ((profitTarget - avg)/avg)*pos;
+    const rrRatio = potentialReward / riskAmount;
+    document.getElementById('c-risk-reward').textContent = `R:R Macro Proy. 1:1.5 = ${fN(rrRatio, 1)}x`;
+  } else {
+    document.getElementById('c-risk-reward').textContent = `R:R Inactivo`;
+  }
+
+  // Actualizar barra visual del colateral consumido vs libre
+  const pctFree = cap > 0 ? (mFree / cap) * 100 : 100;
+  const pctUsed = cap > 0 ? (mUsed / cap) * 100 : 0;
+  document.getElementById('bar-v-free').style.width = pctFree + '%';
+  document.getElementById('bar-v-used').style.width = pctUsed + '%';
+  document.getElementById('c-margin').textContent = `Margen Retenido: ${f(mUsed)} (${fN(pctUsed,0)}%) · Colateral Libre Puro: ${f(mFree)} (${fN(pctFree,0)}%)`;
+
+  // Simulador de Estrés Dinámico
+  const slInput = document.getElementById('sl-pct');
+  const pnlPctVal = parseInt(slInput.value); 
+  const slPct     = Math.abs(pnlPctVal) / 100;
+  const slLoss    = pos * slPct; // Basado en impacto nominal de mercado
+  const slPx      = avg * (1 - slPct);
+  
+  document.getElementById('sl-pct-out').textContent = pnlPctVal + '%';
+  document.getElementById('c-sl').textContent       = pos > 0 ? f(slPx) : "$0";
+  
+  if (pos === 0) {
+    document.getElementById('c-sl-note').textContent = 'Esperando apertura de posiciones de mercado.';
+    document.getElementById('sl-loss').textContent = "$0";
+  } else if (slLoss <= cap) {
+    document.getElementById('c-sl-note').textContent = `Pérdida neta de colateral si BTC cae a ${f(slPx)}`;
+    document.getElementById('sl-loss').innerHTML     = f(slLoss) + ` <span style="color:var(--text3)">(${fN((slLoss/cap)*100,1)}% de la cuenta)</span>`;
+  } else {
+    const extraNeeded = slLoss - cap;
+    document.getElementById('c-sl-note').textContent = `⚠ El desplome quiebra tu colateral disponible antes del stop.`;
+    document.getElementById('sl-loss').innerHTML     = `${f(slLoss)} <span style="color:var(--red)">(Liquida a mitad de camino, requiere inyectar +${f(extraNeeded)})</span>`;
+  }
+
+  // Toggles de Alertas Nativas
+  document.getElementById('a-danger').classList.remove('show');
+  document.getElementById('a-warn').classList.remove('show');
+  if(pos > 0 && btcPrice != null){
+    if(dist < 6) document.getElementById('a-danger').classList.add('show');
+    else if(dist < 16){ document.getElementById('a-warn').classList.add('show'); document.getElementById('a-dist').textContent = dist.toFixed(2); }
+  }
+
+  renderTablesContent();
+}
+
+function renderTablesContent(){
+  // Tabla de Trades
+  const tbody = document.getElementById('trades-body');
+  const tfoot = document.getElementById('trades-foot');
+  tbody.innerHTML = '';
+
+  if(trades.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text3); padding:2rem;">No existen exposiciones nominales registradas en el portafolio.</td></tr>`;
+  }
+
+  trades.forEach(t=>{
+    const currentLev = t.leverage || (t.capital > 0 ? t.position/t.capital : 1);
+    const liq = liqIndiv(t.entry, currentLev);
+    const pnl = btcPrice!=null ? ((btcPrice - t.entry) / t.entry) * t.position : null;
+    const [y,mo,d] = t.date.split('-');
+    
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--text); font-weight:500;">${d}/${mo}/${y}</td>
+      <td><span class="tag ${t.isFromAccount ? 'tag-blue' : 'tag-green'}">${t.isFromAccount ? 'Margen Interno' : 'Fondeo Externo'}</span></td>
+      <td>${t.isFromAccount ? '—' : f(t.capital)}</td>
+      <td style="color:var(--text); font-weight:500;">${f(t.position)}</td>
+      <td><span class="tag ${currentLev<=4?'tag-green':currentLev<=8?'tag-amber':'tag-red'}">x${fN(currentLev,1)}</span></td>
+      <td style="color:var(--text)">${f(t.entry)}</td>
+      <td style="color:var(--red)">${t.isFromAccount ? 'Cross-Dependiente' : f(liq)}</td>
+      <td style="color:${pnl==null?'var(--text3)':pnl>=0?'var(--green)':'var(--red)'}; font-weight:500;">${pnl==null?'—':(pnl>=0?'+':'')+f(pnl)}</td>
+      <td>
+        <button class="btn-del" onclick="editTrade(${t.id})" title="Editar">✎</button>
+        <button class="btn-del red" onclick="delTrade(${t.id})" title="Eliminar">✕</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  const {cap,pos,avg,lev,liq} = metrics();
+  const totPnl = btcPrice!=null ? trades.reduce((s,t)=> s + (((btcPrice - t.entry)/t.entry)*t.position), 0) : null;
+  
+  tfoot.innerHTML = `<tr>
+    <td style="font-weight:600; color:var(--text);">TOTALES</td>
+    <td>—</td>
+    <td style="font-weight:600; color:var(--text);">${f(cap)}</td>
+    <td style="font-weight:600; color:var(--text);">${f(pos)}</td>
+    <td><span class="tag tag-blue" style="font-weight:bold;">${fN(lev,2)}x</span></td>
+    <td style="color:var(--amber); font-weight:600;">${f(avg)}</td>
+    <td style="color:var(--red); font-weight:bold; letter-spacing:0.02em;">${pos > 0 ? f(liq) + ' ★' : '—'}</td>
+    <td style="color:${totPnl==null?'var(--text3)':totPnl>=0?'var(--green)':'var(--red)'}; font-weight:bold;">${totPnl==null?'—':(totPnl>=0?'+':'')+f(totPnl)}</td>
+    <td></td></tr>`;
+
+  // Tabla de Depósitos Puros sin Trade
+  const depBody = document.getElementById('deposits-body');
+  depBody.innerHTML = '';
+  if(deposits.length === 0) {
+    depBody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text3); padding:10px;">Sin inyecciones puras directas.</td></tr>`;
+  }
+  deposits.forEach(d => {
+    const [y,mo,day] = d.date.split('-');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${day}/${mo}/${y}</td>
+      <td style="color:var(--green); font-weight:500;">+${f(d.amount)}</td>
+      <td><button class="btn-del red" onclick="delDeposit(${d.id})">✕</button></td>
+    `;
+    depBody.appendChild(tr);
+  });
+}
+
+// ── 8. GESTIÓN INDEPENDIENTE DE DEPÓSITOS DE RESPALDO (MANUAL MARGIN) ─────────
+async function saveDeposit() {
+  const dateInput = document.getElementById('dep-date').value;
+  const amountInput = parseFloat(document.getElementById('dep-amount').value);
+  if(!dateInput || isNaN(amountAmount) || amountInput <= 0) {
+    return alert('Ingresa parámetros válidos de fondeo de colateral.');
+  }
+  deposits.push({ id: Date.now(), date: dateInput, amount: amountInput });
+  await pushToDatabase();
+  document.getElementById('dep-amount').value = '';
+  render();
+}
+
+async function delDeposit(id) {
+  if(!confirm('¿Retirar este colateral del balance simulado?')) return;
+  deposits = deposits.filter(d => d.id !== id);
+  await pushToDatabase();
+  render();
+}
+
+// ── 9. GESTIÓN INTEGRADA DE TRADES COMPUESTOS ─────────────────────────────────
+async function saveTrade(){
+  const date     = document.getElementById('inp-date').value;
+  const position = parseFloat(document.getElementById('inp-position').value);
+  const entry    = parseFloat(document.getElementById('inp-entry').value);
+  const isFromAccount = document.getElementById('margen-cuenta').checked;
+  let capital  = parseFloat(document.getElementById('inp-capital').value);
+
+  if(!date || isNaN(position) || position<=0 || isNaN(entry) || entry<=0){
+    return alert('Campos incompletos.');
+  }
+  if(isFromAccount) {
+    capital = 0; 
+  } else if(isNaN(capital) || capital <= 0) {
+    return alert('Para nuevos depósitos debés definir un capital de respaldo fijo.');
+  }
+
+  const leverage = isFromAccount ? 0 : position / capital;
 
   if (editingId) {
     const idx = trades.findIndex(t => t.id === editingId);
-    if (idx !== -1) trades[idx] = { ...trades[idx], date, capital, position, entry, leverage };
+    if (idx !== -1) trades[idx] = { ...trades[idx], date, capital, position, entry, leverage, isFromAccount };
     editingId = null;
-    document.getElementById('form-title').textContent = 'Registrar nuevo trade';
-    document.getElementById('btn-submit').textContent = '+ Registrar trade';
+    document.getElementById('form-title').textContent = 'Registrar Nueva Operación de Cobertura / Exposición';
+    document.getElementById('btn-submit').textContent = '+ Compilar e Inyectar Trade';
     document.getElementById('btn-cancel').style.display = 'none';
   } else {
-    trades.push({id:Date.now(), date, capital, position, entry, leverage});
+    trades.push({id:Date.now(), date, capital, position, entry, leverage, isFromAccount});
   }
 
   await pushToDatabase(); 
@@ -640,13 +768,20 @@ function editTrade(id) {
   
   editingId = id;
   document.getElementById('inp-date').value     = t.date;
-  document.getElementById('inp-capital').value  = t.capital;
   document.getElementById('inp-position').value = t.position;
   document.getElementById('inp-entry').value    = t.entry;
-  autoCalcLev();
   
-  document.getElementById('form-title').textContent = 'Editar trade';
-  document.getElementById('btn-submit').textContent = '✓ Guardar cambios';
+  if(t.isFromAccount) {
+    document.getElementById('margen-cuenta').checked = true;
+  } else {
+    document.getElementById('margen-nuevo').checked = true;
+    document.getElementById('inp-capital').value  = t.capital;
+  }
+  
+  toggleMargenSourceInput();
+  
+  document.getElementById('form-title').textContent = 'Modificación de Parámetros de Trade';
+  document.getElementById('btn-submit').textContent = '✓ Confirmar Mutación';
   document.getElementById('btn-cancel').style.display = 'inline-block';
   goTab('nuevo');
 }
@@ -654,8 +789,8 @@ function editTrade(id) {
 function cancelEdit() {
   editingId = null;
   resetForm();
-  document.getElementById('form-title').textContent = 'Registrar nuevo trade';
-  document.getElementById('btn-submit').textContent = '+ Registrar trade';
+  document.getElementById('form-title').textContent = 'Registrar Nueva Operación de Cobertura / Exposición';
+  document.getElementById('btn-submit').textContent = '+ Compilar e Inyectar Trade';
   document.getElementById('btn-cancel').style.display = 'none';
   goTab('trades');
 }
@@ -665,34 +800,329 @@ function resetForm() {
   document.getElementById('inp-position').value = '';
   document.getElementById('inp-entry').value    = '';
   document.getElementById('inp-date').value     = new Date().toISOString().split('T')[0];
-  autoCalcLev();
+  document.getElementById('margen-nuevo').checked = true;
+  toggleMargenSourceInput();
 }
 
 async function delTrade(id){
-  if(!confirm('¿Estás seguro de eliminar este trade?')) return;
+  if(!confirm('¿Eliminar la posición del vector de riesgo?')) return;
   trades = trades.filter(t=>t.id!==id);
   await pushToDatabase(); 
   render();
 }
 
+// ── 10. SIMULACIONES ACTUARIALES AVANZADAS (PESTAÑA ESTRATEGIA) ───────────────
+function calcEstrategia() {
+  if(!trades.length) {
+    document.getElementById('res-promedio').innerHTML = 'Requiere al menos una posición viva en el portafolio.';
+    return;
+  }
+  const {cap, pos, avg} = metrics();
+
+  const elTarg = document.getElementById('est-target-avg');
+  const elEntr = document.getElementById('est-entry-px');
+  const elLev  = document.getElementById('est-lev');
+  const resProm = document.getElementById('res-promedio');
+
+  if(elTarg && elEntr && elLev) {
+    const targ = parseFloat(elTarg.value);
+    const entr = parseFloat(elEntr.value);
+    const l    = parseFloat(elLev.value) || 5;
+
+    if (!targ || !entr) {
+      resProm.innerHTML = 'Ingresá los datos macro para compilar la proyección armónica.';
+    } else if (targ >= avg) {
+      resProm.innerHTML = `<span style="color:var(--red)">Error: El objetivo (${f(targ)}) debe ser inferior al promedio armónico actual (${f(avg)}).</span>`;
+    } else if (entr >= targ) {
+      resProm.innerHTML = `<span style="color:var(--red)">Incoherencia matemática: Para bajar el promedio general a ${f(targ)}, la orden de compra debe ejecutarse a un precio inferior a dicho umbral.</span>`;
+    } else {
+      // Derivación matemática de la proporción de contratos nominales basados en peso armónico
+      // (pos + newPos)/targ = (pos/avg) + (newPos/entr)
+      const tokensActuales = pos / avg;
+      const newPos = (pos - targ * tokensActuales) / (targ / entr - 1);
+      const newCap = newPos / l;
+      
+      resProm.innerHTML = `Para desplazar de forma precisa tu precio de entrada a <strong>${f(targ)}</strong> comprando BTC en el soporte de los ${f(entr)}, debes gatillar una orden nominal de <strong>${f(newPos)} USDT</strong>.<br><br>Si utilizas apalancamiento x${l}, se te demandará inyectar un colateral puro de <strong style="color:var(--green)">${f(newCap)} USDT</strong>. Tu exposición agregada del portafolio se expandirá a los ${f(pos + newPos)} USDT.`;
+    }
+  }
+
+  const elDrop = document.getElementById('est-drop-px');
+  const resSurv = document.getElementById('res-supervivencia');
+
+  if(elDrop) {
+    const drop = parseFloat(elDrop.value);
+    if (!drop) {
+      resSurv.innerHTML = 'Esperando escenario extremo de mercado...';
+    } else if (drop >= avg) {
+      resSurv.innerHTML = '<span style="color:var(--text3)">El precio ingresado no representa un drawdown de la entrada media.</span>';
+    } else {
+      const pnlDrop = ((drop - avg) / avg) * pos;
+      const isLiquidated = pnlDrop <= -cap;
+      let msg = `PnL flotante estimado en zona de capitulación (${f(drop)}): <strong style="color:var(--red)">${f(pnlDrop)} USDT</strong>.<br><br>`;
+      
+      if (isLiquidated) {
+        const extraNeeded = Math.abs(pnlDrop) - cap;
+        msg += `⚠ <strong>ALERTA DE LIQUIDACIÓN TOTAL:</strong> Tu colateral total es destruido antes de tocar este precio. Para que el portafolio sobreviva a este cisne negro debés realizar una transferencia de margen de contingencia de al menos <strong style="color:var(--red)">${f(extraNeeded + 10)} USDT</strong> directos a la cuenta.`;
+      } else {
+        const spare = cap + pnlDrop;
+        msg += `<span style="color:var(--green)">✓ Estructura Resiliente.</span> El portafolio absorbe el drawdown. Te quedaría un colateral residual de protección de ${f(spare)} antes del margen de mantenimiento cero.`;
+      }
+      resSurv.innerHTML = msg;
+    }
+  }
+}
+
+// ── 11. CENTRAL DE DATOS HISTÓRICOS Y CÁLCULO DE INDICADORES ALGORÍTMICOS ──────
 async function fetchPrice(){
   const btn = document.getElementById('btc-btn');
   const txt = document.getElementById('btc-txt');
-  txt.textContent='Actualizando...';
+  txt.textContent='Sincronizando Core...';
   btn.classList.remove('live');
   try{
+    // 1. Precio en tiempo real
     const r = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
     const d = await r.json();
     btcPrice = parseFloat(d.price);
-    txt.textContent = '$'+Math.round(btcPrice).toLocaleString('en-US')+' BTC/USDT';
+    txt.textContent = '$'+Math.round(btcPrice).toLocaleString('en-US')+' BTC Spot';
     btn.classList.add('live');
+
+    // 2. Descargar Klines Históricas para Indicadores Matemáticos Avanzados
+    const rHist = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=400');
+    historicalKlines = await rHist.json();
+
+    buildChartsEngine();
   }catch(e){
-    txt.textContent='Sin conexión';
+    txt.textContent='API Offline';
+    console.error("Fallo de descarga de API de Binance", e);
   }
   render();
 }
 
+// Funciones de cálculo algorítmico estadístico de indicadores técnicos
+function computeEMA(data, period) {
+  let k = 2 / (period + 1);
+  let emaArr = new Array(data.length);
+  // Inicializar primera posición con SMA simple
+  let sum = 0;
+  for(let i=0; i<period; i++) sum += data[i];
+  emaArr[period-1] = sum / period;
+  
+  for(let i=period; i<data.length; i++) {
+    emaArr[i] = data[i] * k + emaArr[i-1] * (1 - k);
+  }
+  return emaArr;
+}
+
+function computeBollingerBands(data, period, stdDevMultiplier) {
+  let bands = { upper: [], middle: [], lower: [] };
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      bands.upper.push(null); bands.middle.push(null); bands.lower.push(null);
+      continue;
+    }
+    let slice = data.slice(i - period + 1, i + 1);
+    let mean = slice.reduce((a, b) => a + b, 0) / period;
+    let variance = slice.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / period;
+    let stdDev = Math.sqrt(variance);
+    
+    bands.middle.push(mean);
+    bands.upper.push(mean + stdDevMultiplier * stdDev);
+    bands.lower.push(mean - stdDevMultiplier * stdDev);
+  }
+  return bands;
+}
+
+function computeStochRSI(closes, period=14, stochPeriod=14, kSmooth=3, dSmooth=3) {
+  // 1. Calcular RSI estándar
+  let rsi = new Array(closes.length).fill(null);
+  let gains = []; let losses = [];
+  
+  for(let i=1; i<closes.length; i++) {
+    let diff = closes[i] - closes[i-1];
+    gains.push(diff > 0 ? diff : 0);
+    losses.push(diff < 0 ? Math.abs(diff) : 0);
+  }
+  
+  let avgGain = gains.slice(0, period).reduce((a,b)=>a+b,0) / period;
+  let avgLoss = losses.slice(0, period).reduce((a,b)=>a+b,0) / period;
+  rsi[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + (avgGain / avgLoss)));
+  
+  for(let i=period+1; i<closes.length; i++) {
+    avgGain = (avgGain * (period - 1) + gains[i-1]) / period;
+    avgLoss = (avgLoss * (period - 1) + losses[i-1]) / period;
+    rsi[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + (avgGain / avgLoss)));
+  }
+  
+  // 2. Calcular Stochastic s/ RSI
+  let stochK = new Array(closes.length).fill(null);
+  for(let i=0; i<closes.length; i++) {
+    if(i < period + stochPeriod) continue;
+    let rsiSlice = rsi.slice(i - stochPeriod + 1, i + 1);
+    let minRsi = Math.min(...rsiSlice);
+    let maxRsi = Math.max(...rsiSlice);
+    stochK[i] = maxRsi === minRsi ? 0 : ((rsi[i] - minRsi) / (maxRsi - minRsi)) * 100;
+  }
+  
+  // 3. Suavizados K y D
+  let smoothK = new Array(closes.length).fill(null);
+  let smoothD = new Array(closes.length).fill(null);
+  for(let i=0; i<closes.length; i++) {
+    if(stochK[i] === null || i < period + stochPeriod + kSmooth) continue;
+    let kSlice = stochK.slice(i - kSmooth + 1, i + 1).filter(v => v !== null);
+    smoothK[i] = kSlice.reduce((a,b)=>a+b,0) / kSlice.length;
+    
+    let dSlice = smoothK.slice(i - dSmooth + 1, i + 1).filter(v => v !== null);
+    if(dSlice.length >= dSmooth) {
+      smoothD[i] = dSlice.reduce((a,b)=>a+b,0) / dSlice.length;
+    }
+  }
+  return { K: smoothK, D: smoothD };
+}
+
+// ── 12. ENSAMBLADOR E INTERCONEXIÓN DEL SISTEMA GRÁFICO (CHART.JS CORRELACTION) ─
+function buildChartsEngine() {
+  if(!historicalKlines.length) return;
+  
+  // Mapear arrays de datos de Binance
+  // Estructura kline: [time, open, high, low, close, volume, ...]
+  const dates = historicalKlines.map(k => {
+    let d = new Date(k[0]);
+    return d.toLocaleDateString('es-ES', {month: 'short', day: 'numeric'});
+  });
+  const closes = historicalKlines.map(k => parseFloat(k[4]));
+  const volumes = historicalKlines.map(k => parseFloat(k[5]));
+  const highs = historicalKlines.map(k => parseFloat(k[2]));
+  const lows = historicalKlines.map(k => parseFloat(k[3]));
+
+  // Matrices Algorítmicas
+  const ema20 = computeEMA(closes, 20);
+  const ema50 = computeEMA(closes, 50);
+  const ema200 = computeEMA(closes, 200);
+  const bb = computeBollingerBands(closes, 20, 2);
+  const stochRSI = computeStochRSI(closes);
+  
+  // Simulación matemática del Precio Realizado (Proxy macro dinámico de acumulación on-chain)
+  const realizedPrice = closes.map((c, idx) => {
+    let lookback = closes.slice(Math.max(0, idx - 145), idx + 1);
+    let baseAvg = lookback.reduce((a,b)=>a+b,0) / lookback.length;
+    return baseAvg * 0.84; // Ajuste del factor delta de escasez de red histórica
+  });
+
+  // Simulación Algorítmica de Bandas Logarítmicas de Regresión (Rainbow Chart)
+  // Ecuación adaptada simplificada para lookback local de 400 velas
+  const rainbowAcu = closes.map((c, idx) => {
+    let daysFactor = 5500 + (idx * 1.02); 
+    let modelPx = Math.pow(10, 2.5 * Math.log10(daysFactor) - 5.45);
+    return modelPx;
+  });
+
+  // Cálculo de VWAP diario simplificado por sesión adaptada
+  const vwap = closes.map((c, idx) => {
+    let sliceCloses = closes.slice(Math.max(0, idx - 10), idx + 1);
+    let sliceVols = volumes.slice(Math.max(0, idx - 10), idx + 1);
+    let pv = sliceCloses.reduce((acc, p, i) => acc + (p * sliceVols[i]), 0);
+    let sv = sliceVols.reduce((a,b)=>a+b,0);
+    return sv > 0 ? pv / sv : c;
+  });
+
+  // Identificar Hitos de Halvings Históricos (Hito de Abril 2024 en la línea de tiempo)
+  const halvingFlags = historicalKlines.map(k => {
+    let timestamp = k[0];
+    let dateObj = new Date(timestamp);
+    // Hito exacto: 19 de Abril 2024 (Aproximación de bloque)
+    if(dateObj.getFullYear() === 2024 && dateObj.getMonth() === 3 && dateObj.getDate() === 19) {
+      return 64000; // Altura visual del trigger de anotación
+    }
+    return null;
+  });
+
+  // Destrucción previa obligatoria para evitar solapamientos de contextos gráficos de la GPU
+  if (mainChartInstance) mainChartInstance.destroy();
+  if (oscChartInstance) oscChartInstance.destroy();
+
+  // Canvas context setups
+  const ctxMain = document.getElementById('mainCryptoChart').getContext('2d');
+  const ctxOsc = document.getElementById('oscillatorChart').getContext('2d');
+
+  // Graficador de Panel Principal (Precios + Indicadores Multi-Capa)
+  mainChartInstance = new Chart(ctxMain, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [
+        { label: 'BTC Spot Price', data: closes, borderColor: '#fff', borderWidth: 1.5, pointRadius: 0, order: 1 },
+        { label: 'EMA 20', data: ema20, borderColor: '#3b82f6', borderWidth: 1, pointRadius: 0, hidden: !document.getElementById('chk-ema20').checked },
+        { label: 'EMA 50', data: ema50, borderColor: '#a855f7', borderWidth: 1, pointRadius: 0, hidden: !document.getElementById('chk-ema50').checked },
+        { label: 'EMA 200', data: ema200, borderColor: '#ef4444', borderWidth: 1.2, pointRadius: 0, hidden: !document.getElementById('chk-ema200').checked },
+        { label: 'BB Upper', data: bb.upper, borderColor: 'rgba(251,191,36,0.3)', borderWidth: 1, borderDash:[4,4], pointRadius: 0, hidden: !document.getElementById('chk-bb').checked },
+        { label: 'BB Lower', data: bb.lower, borderColor: 'rgba(251,191,36,0.3)', borderWidth: 1, borderDash:[4,4], pointRadius: 0, hidden: !document.getElementById('chk-bb').checked },
+        { label: 'VWAP', data: vwap, borderColor: '#06b6d4', borderWidth: 1, pointRadius: 0, hidden: !document.getElementById('chk-vwap').checked },
+        { label: 'Realized Price', data: realizedPrice, borderColor: '#e11d48', borderWidth: 1.5, borderDash:[2,2], pointRadius: 0, hidden: !document.getElementById('chk-realized').checked },
+        { label: 'Rainbow Max', data: rainbowAcu, borderColor: 'rgba(74,222,128,0.25)', borderWidth: 1, pointRadius: 0, hidden: !document.getElementById('chk-rainbow').checked },
+        { 
+          label: 'Halving Hito', 
+          data: halvingFlags, 
+          borderColor: '#fbbf24', 
+          backgroundColor: '#fbbf24', 
+          pointRadius: 6, 
+          showLine: false, 
+          hidden: !document.getElementById('chk-halvings').checked 
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { color: '#5c5c64', font: { size: 9, family: 'IBM Plex Mono' }, maxTicksLimit: 12 } },
+        y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#9a9a9f', font: { size: 10, family: 'IBM Plex Mono' } } }
+      }
+    }
+  });
+
+  // Graficador de Panel Secundario (Estocástico Oscilador)
+  oscChartInstance = new Chart(ctxOsc, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [
+        { label: 'StochRSI K', data: stochRSI.K, borderColor: '#60a5fa', borderWidth: 1, pointRadius: 0 },
+        { label: 'StochRSI D', data: stochRSI.D, borderColor: '#f87171', borderWidth: 1, borderDash:[2,2], pointRadius: 0 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: { 
+          min: 0, max: 100,
+          grid: { color: 'rgba(255,255,255,0.02)' }, 
+          ticks: { stepSize: 50, color: '#5c5c64', font: { size: 9, family: 'IBM Plex Mono' } } 
+        }
+      }
+    }
+  });
+}
+
+function updateChartIndicators() {
+  if(!mainChartInstance) return;
+  mainChartInstance.setDatasetVisibility(1, document.getElementById('chk-ema20').checked);
+  mainChartInstance.setDatasetVisibility(2, document.getElementById('chk-ema50').checked);
+  mainChartInstance.setDatasetVisibility(3, document.getElementById('chk-ema200').checked);
+  mainChartInstance.setDatasetVisibility(4, document.getElementById('chk-bb').checked);
+  mainChartInstance.setDatasetVisibility(5, document.getElementById('chk-bb').checked);
+  mainChartInstance.setDatasetVisibility(6, document.getElementById('chk-vwap').checked);
+  mainChartInstance.setDatasetVisibility(7, document.getElementById('chk-realized').checked);
+  mainChartInstance.setDatasetVisibility(8, document.getElementById('chk-rainbow').checked);
+  mainChartInstance.setDatasetVisibility(9, document.getElementById('chk-halvings').checked);
+  mainChartInstance.update();
+}
+
 document.getElementById('inp-date').value = new Date().toISOString().split('T')[0];
+document.getElementById('dep-date').value = new Date().toISOString().split('T')[0];
 </script>
 </body>
 </html>
