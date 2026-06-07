@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quantfury — BTC Risk Tracker</title>
+<!-- Favicon SVG generado por código con tu nombre -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23181818'/><text x='50' y='55' font-family='monospace' font-size='38' font-weight='bold' fill='%234ade80' text-anchor='middle' dominant-baseline='middle'>JEF</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
-<link rel="icon"...>
+<!-- Firebase Compat SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -134,6 +137,7 @@ input:focus,select:focus{border-color:var(--border2);}
 </head>
 <body>
 
+<!-- PANTALLA DE AUTENTICACIÓN -->
 <div class="shell" id="auth-screen">
   <div class="auth-box">
     <h2>Tracker Login</h2>
@@ -147,8 +151,10 @@ input:focus,select:focus{border-color:var(--border2);}
   </div>
 </div>
 
+<!-- APLICACIÓN PRINCIPAL (Oculta al inicio) -->
 <div class="shell" id="app-screen" style="display:none;">
 
+  <!-- HEADER -->
   <div class="header">
     <div>
       <h1>BTC/USDT — Risk Tracker</h1>
@@ -163,9 +169,11 @@ input:focus,select:focus{border-color:var(--border2);}
     </div>
   </div>
 
+  <!-- ALERTS -->
   <div class="alert alert-red"   id="a-danger">⚠ Liquidación inminente — precio a menos del 5% del nivel de liquidación.</div>
   <div class="alert alert-amber" id="a-warn">△ Margen reducido — liquidación a <span id="a-dist"></span>% del precio actual.</div>
 
+  <!-- MÉTRICAS -->
   <div class="metrics">
     <div class="metric"><label>Capital depositado</label><div class="val" id="m-cap">$0</div><div class="sub">Total de la cuenta</div></div>
     <div class="metric"><label>Posición total</label><div class="val" id="m-pos">$0</div><div class="sub">Tamaño apalancado</div></div>
@@ -173,6 +181,7 @@ input:focus,select:focus{border-color:var(--border2);}
     <div class="metric"><label>P&amp;L estimado</label><div class="val" id="m-pnl">—</div><div class="sub" id="m-pnl-sub">Esperando precio BTC</div></div>
   </div>
 
+  <!-- CARDS -->
   <div class="cards">
     <div class="card">
       <div class="card-title">Liquidación exacta (Quantfury)</div>
@@ -201,12 +210,14 @@ input:focus,select:focus{border-color:var(--border2);}
     </div>
   </div>
 
+  <!-- TABS -->
   <div class="tabs">
     <button class="tab active" id="tbtn-trades"    onclick="setTab('trades',this)">Trades</button>
     <button class="tab"        id="tbtn-estrategia" onclick="setTab('estrategia',this)">Simulador de Estrategia</button>
     <button class="tab"        id="tbtn-nuevo"     onclick="setTab('nuevo',this)">+ Nuevo trade</button>
   </div>
 
+  <!-- TAB: TRADES -->
   <div class="tab-content active" id="tab-trades">
     <div class="card">
       <div class="tbl-wrap">
@@ -224,6 +235,7 @@ input:focus,select:focus{border-color:var(--border2);}
     </div>
   </div>
 
+  <!-- TAB: ESTRATEGIA -->
   <div class="tab-content" id="tab-estrategia">
     <div class="est-grid">
       <div class="est-section">
@@ -247,6 +259,7 @@ input:focus,select:focus{border-color:var(--border2);}
     </div>
   </div>
 
+  <!-- TAB: NUEVO TRADE -->
   <div class="tab-content" id="tab-nuevo">
     <div class="card">
       <div class="card-title" id="form-title">Registrar nuevo trade</div>
@@ -266,7 +279,9 @@ input:focus,select:focus{border-color:var(--border2);}
     </div>
   </div>
 
-</div><script>
+</div><!-- /shell -->
+
+<script>
 // ── 1. CONFIGURACIÓN FIREBASE ─────────────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyDK1fv8aUhRdUDW-Z9XQF7sd7OiIqrx5tQ",
