@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quantfury — BTC Risk Tracker</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230f172a'/><text x='50' y='55' font-family='monospace' font-size='38' font-weight='bold' fill='%2310b981' text-anchor='middle' dominant-baseline='middle'>JEF</text></svg>">
+<title>Quantfury — BTC Risk Tracker Pro</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111111'/><text x='50' y='55' font-family='monospace' font-size='38' font-weight='bold' fill='%23ffffff' text-anchor='middle' dominant-baseline='middle'>JEF</text></svg>">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,35 +17,35 @@
 <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 
 <style>
-/* ── VARIABLES & THEMES ── */
+/* ── CALIBRACIÓN DE VARIABLES Y TEMAS MONOCROMÁTICOS ── */
 :root[data-theme="dark"] {
-  --bg: #0f172a; --bg2: #1e293b; --bg3: #334155; --bg4: #475569;
-  --border: #334155; --border2: #475569;
-  --text: #f8fafc; --text2: #cbd5e1; --text3: #94a3b8;
-  --green: #10b981; --green-dim: rgba(16, 185, 129, 0.15);
-  --red: #ef4444; --red-dim: rgba(239, 68, 68, 0.15);
-  --amber: #f59e0b; --amber-dim: rgba(245, 158, 11, 0.15);
-  --blue: #3b82f6; --blue-dim: rgba(59, 130, 246, 0.15);
-  --purple: #8b5cf6; --purple-dim: rgba(139, 92, 246, 0.15);
-  --grid-line: rgba(255, 255, 255, 0.05);
+  --bg: #000000; --bg2: #111111; --bg3: #1a1a1c; --bg4: #2d2d30;
+  --border: #1a1a1c; --border2: #2d2d30;
+  --text: #ffffff; --text2: #a0a0a5; --text3: #5f5f65;
+  --green: #10b981; --green-dim: rgba(16, 185, 129, 0.12);
+  --red: #ef4444; --red-dim: rgba(239, 68, 68, 0.12);
+  --amber: #f59e0b; --amber-dim: rgba(245, 158, 11, 0.12);
+  --blue: #ffffff; --blue-dim: rgba(255, 255, 255, 0.08);
+  --purple: #e0e0e5; --purple-dim: rgba(255, 255, 255, 0.05);
+  --grid-line: rgba(255, 255, 255, 0.03);
 }
 
 :root[data-theme="light"] {
-  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
-  --border: #e2e8f0; --border2: #cbd5e1;
-  --text: #0f172a; --text2: #475569; --text3: #64748b;
-  --green: #059669; --green-dim: rgba(5, 150, 105, 0.1);
-  --red: #dc2626; --red-dim: rgba(220, 38, 38, 0.1);
-  --amber: #d97706; --amber-dim: rgba(217, 119, 6, 0.1);
-  --blue: #2563eb; --blue-dim: rgba(37, 99, 235, 0.1);
-  --purple: #7c3aed; --purple-dim: rgba(124, 58, 237, 0.1);
-  --grid-line: rgba(0, 0, 0, 0.05);
+  --bg: #ffffff; --bg2: #f4f4f6; --bg3: #e4e4e7; --bg4: #d4d4d8;
+  --border: #e4e4e7; --border2: #cbd5e1;
+  --text: #000000; --text2: #4b5563; --text3: #9ca3af;
+  --green: #059669; --green-dim: rgba(5, 150, 105, 0.08);
+  --red: #dc2626; --red-dim: rgba(220, 38, 38, 0.08);
+  --amber: #d97706; --amber-dim: rgba(217, 119, 6, 0.08);
+  --blue: #000000; --blue-dim: rgba(0, 0, 0, 0.06);
+  --purple: #27272a; --purple-dim: rgba(0, 0, 0, 0.04);
+  --grid-line: rgba(0, 0, 0, 0.04);
 }
 
 :root {
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --r: 8px; --rl: 12px; --transition: 0.2s ease;
+  --r: 6px; --rl: 10px; --transition: 0.15s ease;
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -53,18 +53,22 @@ html{font-size:15px;scroll-behavior:smooth;}
 body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-weight:400;line-height:1.6;min-height:100vh;transition:background-color var(--transition), color var(--transition);}
 .shell{max-width:1280px;margin:0 auto;padding:1.5rem 1.5rem 5rem;}
 
-/* ── AUTH ── */
+/* ── AUTENTICACIÓN ── */
 #auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;}
-.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:2.5rem;width:100%;max-width:400px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.05);}
-.auth-logo{font-family:var(--font-mono);font-size:1.8rem;font-weight:600;color:var(--green);margin-bottom:.5rem;}
-.auth-sub{font-size:.85rem;color:var(--text3);margin-bottom:2rem;}
+.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:2.5rem;width:100%;max-width:400px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.5);}
+.auth-logo{font-family:var(--font-mono);font-size:1.8rem;font-weight:600;color:var(--text);margin-bottom:.3rem;letter-spacing:-0.03em;}
+.auth-sub{font-size:.85rem;color:var(--text2);margin-bottom:2rem;}
 .auth-box input{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--font-mono);font-size:.9rem;padding:12px;width:100%;margin-bottom:12px;outline:none;transition:all var(--transition);}
-.auth-box input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-dim);}
-.auth-btn{background:var(--text);color:var(--bg);font-family:var(--font-sans);font-weight:500;font-size:.9rem;padding:12px;width:100%;border:none;border-radius:var(--r);cursor:pointer;margin-bottom:10px;transition:opacity var(--transition);}
+.auth-box input:focus{border-color:var(--text2);}
+.auth-btn{background:var(--text);color:var(--bg);font-family:var(--font-sans);font-weight:600;font-size:.9rem;padding:12px;width:100%;border:none;border-radius:var(--r);cursor:pointer;margin-bottom:10px;transition:opacity var(--transition);}
 .auth-btn:hover{opacity:.85;}
 .auth-btn.outline{background:transparent;border:1px solid var(--border);color:var(--text2);}
 .auth-btn.outline:hover{background:var(--bg3);color:var(--text);}
 #auth-error{color:var(--red);font-size:.8rem;margin-bottom:1rem;min-height:1.2rem;font-family:var(--font-mono);}
+.divider { display:flex; align-items:center; text-align:center; margin:1rem 0; color:var(--text3); font-size:.8rem; }
+.divider::before, .divider::after { content:''; flex:1; border-bottom:1px solid var(--border); }
+.divider:not(:empty)::before { margin-right:.5em; }
+.divider:not(:empty)::after { margin-left:.5em; }
 
 /* ── HEADER ── */
 .header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:15px;}
@@ -73,9 +77,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-we
 .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .hbtn{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;font-family:var(--font-sans);font-weight:500;font-size:.8rem;color:var(--text);cursor:pointer;transition:all var(--transition);white-space:nowrap;}
 .hbtn:hover{border-color:var(--border2);background:var(--bg3);}
-.hbtn.primary{background:var(--green);border-color:var(--green);color:#fff;}
-.hbtn.primary:hover{background:#059669;border-color:#059669;}
-.hbtn.theme-toggle{padding:8px 10px; font-size:1.1rem;}
+.hbtn.primary{background:var(--text);border-color:var(--text);color:var(--bg);font-weight:600;}
+.hbtn.primary:hover{opacity:0.9;}
+.hbtn.theme-toggle{padding:8px 12px; font-size:1rem;}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;}
 .hbtn.live .dot{background:var(--green);box-shadow:0 0 0 3px var(--green-dim);}
 
@@ -85,15 +89,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-we
 .alert-red{background:var(--red-dim);border-color:var(--red);color:var(--red);}
 .alert-amber{background:var(--amber-dim);border-color:var(--amber);color:var(--amber);}
 
-/* ── METRICS BAR (AUTO-FIT GRID) ── */
+/* ── METRICS BAR ── */
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:1.5rem;}
 .metric{background:var(--bg2);padding:1.2rem;}
 .metric label{font-size:.7rem;font-family:var(--font-sans);font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;}
 .metric .val{font-family:var(--font-mono);font-size:1.3rem;font-weight:600;line-height:1.2;color:var(--text);}
 .metric .sub{font-size:.75rem;color:var(--text2);margin-top:4px;}
 
-/* ── CARDS (AUTO-FIT GRID) ── */
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px;margin-bottom:1.5rem;}
+/* ── RISK CARD LAYOUTS ── */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:15px;margin-bottom:1.5rem;}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;display:flex;flex-direction:column;}
 .card-title{font-size:.7rem;font-family:var(--font-sans);font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.8rem;}
 .big{font-family:var(--font-mono);font-size:1.6rem;font-weight:600;color:var(--text);}
@@ -102,28 +106,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-we
 .bar{height:100%;border-radius:2px;transition:width .5s,background .5s;}
 .lev-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
 
-/* PIE CHART SPECIFIC */
 .pie-wrapper{position:relative;width:100%;height:130px;margin:auto;flex-grow:1;}
 .pie-labels{display:flex;justify-content:space-between;font-size:.75rem;font-family:var(--font-mono);margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
 
-/* ── TAGS ── */
-.tag{display:inline-block;font-size:.7rem;font-family:var(--font-mono);padding:3px 8px;border-radius:4px;font-weight:500;}
-.tag-green{background:var(--green-dim);color:var(--green);}
-.tag-amber{background:var(--amber-dim);color:var(--amber);}
-.tag-red{background:var(--red-dim);color:var(--red);}
-.tag-blue{background:var(--blue-dim);color:var(--blue);}
-
-/* ── SL SLIDER ── */
+/* ── SLIDER ── */
 .sl-row{display:flex;align-items:center;gap:12px;margin:12px 0;}
 .sl-row label{font-size:.75rem;font-weight:500;color:var(--text2);min-width:55px;}
-input[type=range]{flex:1;accent-color:var(--blue);height:4px;}
+input[type=range]{flex:1;accent-color:var(--text);height:4px;background:var(--bg3);border-radius:2px;}
 .sl-row span{font-family:var(--font-mono);font-size:.85rem;font-weight:600;min-width:50px;text-align:right;}
 
 /* ── TABS ── */
 .tabs{display:flex;gap:4px;margin-bottom:1.5rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:4px;width:fit-content;flex-wrap:wrap;}
 .tab{background:transparent;border:none;color:var(--text2);font-size:.8rem;font-family:var(--font-sans);font-weight:500;padding:8px 16px;border-radius:6px;cursor:pointer;transition:all var(--transition);}
-.tab.active{background:var(--bg3);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.1);}
-.tab:hover:not(.active){color:var(--text);}
+.tab.active{background:var(--bg4);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.3);}
 .tab-content{display:none;}
 .tab-content.active{display:block;}
 
@@ -135,57 +130,57 @@ tbody td{padding:12px;border-bottom:1px solid var(--border);color:var(--text2);f
 tbody tr:hover td{background:var(--bg3);}
 tfoot td{padding:12px;font-weight:600;color:var(--text);border-top:2px solid var(--border2);font-family:var(--font-mono);background:var(--bg);}
 
-/* ── FORMS & ESTRATEGIA ── */
+/* ── FORMS & CALCULATORS ── */
 .est-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:15px;}
 .est-section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;}
 .est-title{font-family:var(--font-sans);font-size:.95rem;font-weight:600;margin-bottom:1rem;color:var(--text);}
 .fg{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
 .fg label{font-size:.75rem;font-family:var(--font-sans);font-weight:500;color:var(--text2);}
-input[type=text],input[type=number],input[type=date],select{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--font-mono);font-size:.85rem;padding:10px 12px;width:100%;outline:none;transition:border-color var(--transition);}
-input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-dim);}
+input[type=text],input[type=number],input[type=date],select{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--font-mono);font-size:.85rem;padding:10px 12px;width:100%;outline:none;}
+input:focus,select:focus{border-color:var(--text2);}
 .result-box{font-family:var(--font-sans);font-size:.85rem;color:var(--text2);padding:12px;background:var(--bg);border-radius:var(--r);border:1px dashed var(--border);margin-top:15px;line-height:1.6;}
 .result-box strong{font-family:var(--font-mono);color:var(--text);}
 
-/* ── BOTONES ── */
-.btn{background:var(--text);color:var(--bg);font-family:var(--font-sans);font-size:.85rem;font-weight:500;border:none;border-radius:var(--r);padding:10px 18px;cursor:pointer;transition:all var(--transition);}
-.btn:hover{opacity:.85; transform:translateY(-1px);}
-.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);font-family:var(--font-sans);font-size:.85rem;font-weight:500;border-radius:var(--r);padding:10px 18px;cursor:pointer;transition:all var(--transition);}
+/* ── STRUCTURAL BUTTONS ── */
+.btn{background:var(--text);color:var(--bg);font-family:var(--font-sans);font-size:.85rem;font-weight:600;border:none;border-radius:var(--r);padding:10px 18px;cursor:pointer;transition:all var(--transition);}
+.btn:hover{opacity:.85;}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);font-family:var(--font-sans);font-size:.85rem;font-weight:500;border-radius:var(--r);padding:10px 18px;cursor:pointer;}
 .btn-ghost:hover{background:var(--bg3);border-color:var(--border2);}
-.btn-del{background:var(--bg);border:1px solid var(--border);color:var(--text2);font-family:var(--font-sans);font-size:.75rem;border-radius:4px;padding:4px 8px;cursor:pointer;transition:all var(--transition);}
+.btn-del{background:var(--bg);border:1px solid var(--border);color:var(--text2);font-family:var(--font-sans);font-size:.75rem;border-radius:4px;padding:4px 8px;cursor:pointer;}
 .btn-del:hover{background:var(--border);color:var(--text);}
 .btn-del.red:hover{background:var(--red-dim);border-color:var(--red);color:var(--red);}
 
-/* ── CHARTS SECTIONS ── */
+/* ── CHART PANEL STRUCTURES ── */
 .chart-section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;margin-bottom:1.5rem;}
 .chart-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center;}
 .ind-btn{background:var(--bg);border:1px solid var(--border);color:var(--text3);font-family:var(--font-mono);font-size:.7rem;font-weight:500;padding:6px 12px;border-radius:6px;cursor:pointer;transition:all var(--transition);}
-.ind-btn.on{border-color:currentColor;}
-.ind-btn.on.ema20{color:#3b82f6;background:rgba(59,130,246,0.1);}
-.ind-btn.on.ema50{color:#f59e0b;background:rgba(245,158,11,0.1);}
-.ind-btn.on.ema200{color:#8b5cf6;background:rgba(139,92,246,0.1);}
+.ind-btn.on{border-color:var(--text2);color:var(--text);}
 .tf-group{display:flex;gap:2px;background:var(--bg);border-radius:6px;border:1px solid var(--border);padding:3px;}
-.tf-btn{background:transparent;border:none;color:var(--text3);font-family:var(--font-mono);font-size:.7rem;font-weight:600;padding:5px 12px;border-radius:4px;cursor:pointer;transition:all var(--transition);}
-.tf-btn.on{background:var(--border);color:var(--text);}
+.tf-btn{background:transparent;border:none;color:var(--text3);font-family:var(--font-mono);font-size:.7rem;font-weight:600;padding:5px 12px;border-radius:4px;cursor:pointer;}
+.tf-btn.on{background:var(--bg4);color:var(--text);}
 #btc-chart{width:100%;height:450px;border-radius:var(--r);overflow:hidden;}
 
-/* ── ANALYTIC CHARTS GRID ── */
 .analytic-charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:15px;}
 .chart-container-large{position:relative;width:100%;height:280px;margin-top:10px;}
 @media(max-width:500px){ .analytic-charts-grid{grid-template-columns:1fr;} .chart-container-large{height:220px;} }
 
-/* ── MODAL ── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:1rem;}
+/* ── MODALS ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:1rem;}
 .modal-overlay.open{display:flex;}
-.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:2rem;width:100%;max-width:500px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:2rem;width:100%;max-width:500px;box-shadow:0 25px 50px rgba(0,0,0,0.5);}
 .modal h3{font-family:var(--font-sans);font-size:1.2rem;font-weight:600;margin-bottom:1.5rem;color:var(--text);}
 .modal-footer{display:flex;gap:10px;margin-top:1.5rem;justify-content:flex-end;}
 .radio-group{display:flex;gap:10px;margin-bottom:1rem;}
-.radio-opt{flex:1;background:var(--bg);border:2px solid var(--border);border-radius:var(--r);padding:12px;cursor:pointer;text-align:center;transition:all var(--transition);}
-.radio-opt.selected{border-color:var(--green);background:var(--green-dim);}
+.radio-opt{flex:1;background:var(--bg);border:2px solid var(--border);border-radius:var(--r);padding:12px;cursor:pointer;text-align:center;}
+.radio-opt.selected{border-color:var(--text);background:var(--bg3);}
 .radio-opt-label{font-family:var(--font-sans);font-size:.85rem;font-weight:600;color:var(--text);}
 .radio-opt-sub{font-family:var(--font-sans);font-size:.7rem;color:var(--text2);margin-top:4px;}
-.radio-opt.selected .radio-opt-sub{color:var(--green);}
 
+.tag{display:inline-block;font-size:.7rem;font-family:var(--font-mono);padding:3px 8px;border-radius:4px;font-weight:500;}
+.tag-green{background:var(--green-dim);color:var(--green);}
+.tag-amber{background:var(--amber-dim);color:var(--amber);}
+.tag-red{background:var(--red-dim);color:var(--red);}
+.tag-blue{background:var(--bg4);color:var(--text);}
 </style>
 </head>
 <body>
@@ -217,7 +212,7 @@ input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blu
         <span class="dot"></span><span id="btc-txt">Actualizar</span>
       </button>
       <button class="hbtn primary" onclick="openCapitalModal()">+ Capital</button>
-      <button class="hbtn primary" style="background:var(--blue); border-color:var(--blue);" onclick="openTradeModal()">+ Trade</button>
+      <button class="hbtn primary" style="background:var(--bg4); border-color:var(--border2); color:var(--text);" onclick="openTradeModal()">+ Trade</button>
       <button class="hbtn" onclick="logOut()">Salir</button>
     </div>
   </div>
@@ -264,8 +259,8 @@ input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blu
       <div class="note" id="c-sl-note">—</div>
       <div class="sl-row">
         <label>Caída %</label>
-        <input type="range" id="sl-pct" min="-100" max="-1" value="-50" step="1" oninput="render()">
-        <span id="sl-pct-out" style="color:var(--red)">-50%</span>
+        <input type="range" id="sl-pct" min="-100" max="-1" value="-30" step="1" oninput="render()">
+        <span id="sl-pct-out" style="color:var(--red)">-30%</span>
       </div>
       <div class="note">Pérdida (USDT): <strong id="sl-loss" style="color:var(--text);font-family:var(--font-mono)">$0</strong></div>
     </div>
@@ -390,7 +385,9 @@ input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blu
     </div>
   </div>
 
-</div><div class="modal-overlay" id="modal-capital">
+</div>
+
+<div class="modal-overlay" id="modal-capital">
   <div class="modal">
     <h3>+ Agregar Margen Libre</h3>
     <div class="note" style="margin-bottom:1.5rem;">Agrega capital a tu cuenta para aumentar el margen disponible y alejar la liquidación. Esto <strong>no</strong> abre una nueva posición en el mercado.</div>
@@ -426,14 +423,14 @@ input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blu
       <div class="fg"><label>Margen Utilizado (USDT)</label><input type="number" id="inp-capital" placeholder="200" oninput="autoCalcLev()"></div>
       <div class="fg"><label>Tamaño Posición (USDT)</label><input type="number" id="inp-position" placeholder="1000" oninput="autoCalcLev()"></div>
       <div class="fg"><label>Precio Entrada BTC ($)</label><input type="number" id="inp-entry" placeholder="65000"></div>
-      <div class="fg"><label>Apalancamiento (Calculado)</label><input type="text" id="inp-lev-display" value="0x" readonly style="color:var(--blue);font-weight:600;background:var(--bg3);"></div>
+      <div class="fg"><label>Apalancamiento (Calculado)</label><input type="text" id="inp-lev-display" value="0x" readonly style="color:var(--text);font-weight:600;background:var(--bg3);border:1px solid var(--border);"></div>
     </div>
     
     <div id="capital-type-note" class="note" style="padding:10px;background:var(--bg);border-radius:var(--r);border:1px dashed var(--border);"></div>
     
     <div class="modal-footer">
       <button class="btn-ghost" id="btn-cancel" onclick="closeModal('modal-trade');cancelEdit()">Cancelar</button>
-      <button class="btn" id="btn-submit" onclick="saveTrade()" style="background:var(--blue); color:white;">+ Registrar Trade</button>
+      <button class="btn" id="btn-submit" onclick="saveTrade()">+ Registrar Trade</button>
     </div>
   </div>
 </div>
@@ -456,7 +453,6 @@ function getCssVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-// Global Chart.js Font Setting
 Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
 
 function updateChartsTheme() {
@@ -464,9 +460,9 @@ function updateChartsTheme() {
   
   if(lwChart) {
     const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-    const bg = isLight ? '#ffffff' : '#1e293b';
-    const textColor = isLight ? '#475569' : '#94a3b8';
-    const gridColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
+    const bg = isLight ? '#ffffff' : '#111111';
+    const textColor = isLight ? '#475569' : '#a0a0a5';
+    const gridColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)';
     
     lwChart.applyOptions({
       layout: { background: { color: bg }, textColor: textColor },
@@ -506,7 +502,7 @@ let indicators={ema20:true,ema50:true,ema200:true};
 let currentTf='1w';
 
 // Instancias de Gráficos
-let lwChart=null, lwSeries={};
+let lwChart=null;
 let survInst=null, dcaInst=null, tradesMixInst=null, capPieInst=null, capHistInst=null, marginPosInst=null;
 
 // ── AUTH ──
@@ -536,7 +532,7 @@ auth.onAuthStateChanged(async user=>{
     document.getElementById('user-display').textContent=user.email||'Google';
     await loadData();
     fetchPrice();
-    updateChartsTheme(); // Inicializar colores correctos
+    updateChartsTheme();
   }else{
     document.getElementById('auth-screen').style.display='flex';
     document.getElementById('app-screen').style.display='none';
@@ -594,7 +590,7 @@ function setTab(name,btn){
   if(name==='estrategia') calcEstrategia();
   if(name==='grafico') { initBTCChart(); renderMiniCharts(); }
   if(name==='historial') { renderCapitalHistory(); renderCapitalHistoryChart(); }
-  if(name==='trades') { /* Tabla principal */ }
+  if(name==='trades') { render(); }
 }
 
 function goTab(name){
@@ -624,10 +620,10 @@ function selectCapitalType(type){
   selectedCapitalType=type;
   document.getElementById('type-existing').classList.toggle('selected',type==='existing');
   document.getElementById('type-new').classList.toggle('selected',type==='new');
-  const {cap}=metrics();
+  const {mFree}=metrics();
   const note=document.getElementById('capital-type-note');
   if(type==='existing'){
-    note.innerHTML=`<span style="color:var(--blue); font-weight:600;">ℹ Capital Existente:</span> Consume margen libre actual. Total depositado: <strong>${f(cap)}</strong>`;
+    note.innerHTML=`<span style="color:var(--text); font-weight:600;">ℹ Capital Existente:</span> Consume margen libre actual. Disponible en wallet: <strong>${f(mFree)}</strong>`;
   }else{
     note.innerHTML=`<span style="color:var(--green); font-weight:600;">✓ Nuevo Depósito:</span> Suma fondos reales a la cuenta y ejecuta el trade.`;
   }
@@ -643,7 +639,6 @@ async function saveCapital(){
   await pushToDatabase();
   closeModal('modal-capital');
   render();
-  if(activeTab==='historial') { renderCapitalHistory(); renderCapitalHistoryChart(); }
 }
 
 async function delCapital(id){
@@ -651,7 +646,6 @@ async function delCapital(id){
   capitals=capitals.filter(c=>c.id!==id);
   await pushToDatabase();
   render();
-  if(activeTab==='historial') { renderCapitalHistory(); renderCapitalHistoryChart(); }
 }
 
 function autoCalcLev(){
@@ -665,9 +659,9 @@ async function saveTrade(){
   const capital=parseFloat(document.getElementById('inp-capital').value);
   const position=parseFloat(document.getElementById('inp-position').value);
   const entry=parseFloat(document.getElementById('inp-entry').value);
-  if(!date||isNaN(capital)||capital<=0||isNaN(position)||position<=0||isNaN(entry)||entry<=0)
+  if(!date||isNaN(capital)||capital<0||isNaN(position)||position<=0||isNaN(entry)||entry<=0)
     return alert('Completá todos los campos con valores numéricos válidos.');
-  const leverage=position/capital;
+  const leverage=capital>0?position/capital:0;
   const isNewDeposit=selectedCapitalType==='new';
 
   if(editingId){
@@ -693,7 +687,7 @@ function editTrade(id){
   document.getElementById('inp-entry').value=t.entry;
   autoCalcLev();
   selectCapitalType(t.isNewDeposit?'new':'existing');
-  document.getElementById('trade-modal-title').textContent='Editar Trade (T'+trades.findIndex(x=>x.id===id)+1+')';
+  document.getElementById('trade-modal-title').textContent='Editar Trade';
   document.getElementById('btn-submit').textContent='Guardar Cambios';
   document.getElementById('modal-trade').classList.add('open');
 }
@@ -701,8 +695,6 @@ function editTrade(id){
 function cancelEdit(){
   editingId=null;
   resetForm();
-  document.getElementById('trade-modal-title').textContent='+ Registrar Nuevo Trade';
-  document.getElementById('btn-submit').textContent='+ Registrar Trade';
 }
 
 function resetForm(){
@@ -720,15 +712,15 @@ async function delTrade(id){
 
 // ── RENDERIZADO PRINCIPAL ──
 function render(){
-  const{cap,pos,avg,lev,liq,mUsed,mFree}=metrics();
+  const {cap,pos,avg,lev,liq,mUsed,mFree}=metrics();
   
-  // Renderear Pie Chart siempre
+  // Renderizar Pie Chart siempre para evitar errores de referencia
   renderCapitalPie(mUsed, mFree);
   
   if(activeTab === 'grafico') renderMiniCharts();
   if(activeTab === 'historial') { renderCapitalHistoryChart(); renderCapitalHistory(); }
 
-  if(!trades.length&&!capitals.length){
+  if(!trades.length && !capitals.length){
     document.getElementById('m-cap').textContent='$0';
     document.getElementById('m-pos').textContent='$0';
     document.getElementById('m-avg').textContent='$0';
@@ -823,6 +815,10 @@ function renderTrades(){
     const pnl=btcPrice!=null?(btcPrice-t.entry)/t.entry*t.position:null;
     const isNew=t.isNewDeposit;
     const tr=document.createElement('tr');
+    
+    // CORREGIDO: Solución al SyntaxError por punto y coma dentro de template strings expresión lineal
+    const pnlStyleColor = pnl == null ? 'var(--text3)' : (pnl >= 0 ? 'var(--green)' : 'var(--red)');
+    
     tr.innerHTML=`
       <td style="color:var(--text)">${t.date}</td>
       <td>${f(t.capital)}</td>
@@ -831,7 +827,7 @@ function renderTrades(){
       <td><span class="tag ${t.leverage<=5?'tag-green':t.leverage<=10?'tag-amber':'tag-red'}">x${Number(t.leverage.toFixed(1))}</span></td>
       <td style="color:var(--text)">${f(t.entry)}</td>
       <td style="color:var(--red)">${f(liq)}</td>
-      <td style="color:${pnl==null?'var(--text3)':pnl>=0?'var(--green)':'var(--red)'; font-weight:600;}">${pnl==null?'—':(pnl>=0?'+':'')+f(pnl)}</td>
+      <td style="color:${pnlStyleColor}; font-weight:600;">${pnl==null?'—':(pnl>=0?'+':'')+f(pnl)}</td>
       <td>
         <button class="btn-del" onclick="editTrade(${t.id})" title="Editar">✎</button>
         <button class="btn-del red" onclick="delTrade(${t.id})" title="Eliminar">✕</button>
@@ -850,7 +846,7 @@ function renderTrades(){
     <td></td></tr>`;
 }
 
-// ── TABLA HISTORIAL DE CAPITAL ──
+// ── HISTORIAL DE MOVIMIENTOS DE CAPITAL ──
 function renderCapitalHistory(){
   const tbody=document.getElementById('capital-body');
   if(!tbody)return;
@@ -881,7 +877,7 @@ function renderCapitalHistory(){
   `).join('');
 }
 
-// ── CHART: Evolución del Capital ──
+// ── RE-RENDER CAPITAL TIMELINE HISTOGRAM ──
 function renderCapitalHistoryChart() {
   const ctx = document.getElementById('capital-history-chart');
   if(!ctx) return;
@@ -904,7 +900,6 @@ function renderCapitalHistoryChart() {
     cumulative.push(sum);
   });
 
-  Chart.defaults.color = getCssVar('--text3');
   capHistInst = new Chart(ctx.getContext('2d'), {
     type: 'line',
     data: {
@@ -912,14 +907,14 @@ function renderCapitalHistoryChart() {
       datasets: [{
         label: 'Capital Total (USDT)',
         data: cumulative,
-        borderColor: getCssVar('--green'),
-        backgroundColor: getCssVar('--green-dim'),
-        borderWidth: 2, pointRadius: 4, pointHoverRadius: 6, fill: true, tension: 0.1
+        borderColor: '#ffffff',
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderWidth: 2, pointRadius: 4, fill: true, tension: 0.1
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip:{ callbacks:{ label: c => '$'+c.raw.toLocaleString() }} },
+      plugins: { legend: { display: false } },
       scales: {
         x: { grid: { display: false }, ticks: { font: { family: getCssVar('--font-mono') } } },
         y: { grid: { color: getCssVar('--grid-line') }, beginAtZero: true, ticks: { font: { family: getCssVar('--font-mono') }, callback: v => '$'+v } }
@@ -928,7 +923,7 @@ function renderCapitalHistoryChart() {
   });
 }
 
-// ── PIE CHART ──
+// ── ALLOCATION DOUGHNUT ENGINE ──
 function renderCapitalPie(mUsed, mFree) {
   const ctx = document.getElementById('cap-pie-chart');
   if(!ctx)return;
@@ -954,14 +949,14 @@ function renderCapitalPie(mUsed, mFree) {
       }]
     },
     options: {
-      cutout: '75%', animation: { duration: 500 },
+      cutout: '75%', animation: { duration: 400 },
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.label + ': ' + f(c.raw) } } },
       responsive: true, maintainAspectRatio: false
     }
   });
 }
 
-// ── GRÁFICOS ANALÍTICOS (PESTAÑA GRÁFICOS) ──
+// ── STRATEGY & RISK CHARTS GENERATION ──
 function renderMiniCharts(){
   const tabGrafico = document.getElementById('tab-grafico');
   if(!tabGrafico || !tabGrafico.classList.contains('active')) return;
@@ -975,16 +970,15 @@ function renderMiniCharts(){
   const{cap,pos,avg,liq}=metrics();
   if(pos===0)return;
 
-  Chart.defaults.color = getCssVar('--text3');
   const fontFamilyMono = getCssVar('--font-mono');
   const gridColor = getCssVar('--grid-line');
 
-  // 1. SURVIVAL CURVE
+  // 1. SURVIVAL LINE
   const survCtx=document.getElementById('survival-chart').getContext('2d');
   if(survInst)survInst.destroy();
   const sPrices=[]; const sEquity=[];
   const bottomPx = Math.max(0, liq - (avg * 0.05));
-  const step = (avg - bottomPx) / 15; // Más resolución
+  const step = (avg - bottomPx) / 15;
   
   for(let i=0; i<=15; i++){
     const p = avg - (step * i);
@@ -999,9 +993,9 @@ function renderMiniCharts(){
     data:{
       labels:sPrices,
       datasets:[{
-        label:'Equity Restante (USDT)', data:sEquity,
-        borderColor:getCssVar('--amber'), backgroundColor:getCssVar('--amber-dim'),
-        pointRadius:0, pointHoverRadius:4, borderWidth:2, fill:true, tension:0.3
+        label: 'Equity (USDT)', data: sEquity,
+        borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.05)',
+        pointRadius:0, borderWidth:2, fill:true, tension:0.2
       }]
     },
     options:{
@@ -1014,7 +1008,7 @@ function renderMiniCharts(){
     }
   });
 
-  // 2. MAPA DCA
+  // 2. DCA HEATMAP PROXIES
   const dcaCtx=document.getElementById('dca-map-chart').getContext('2d');
   if(dcaInst)dcaInst.destroy();
   const sortedTrades = [...trades].sort((a,b)=> a.entry - b.entry);
@@ -1027,7 +1021,7 @@ function renderMiniCharts(){
       labels:dcaLabels,
       datasets:[{
         label:'Tamaño Posición', data:dcaData,
-        backgroundColor:getCssVar('--green-dim'), borderColor:getCssVar('--green'), borderWidth:1, borderRadius:4
+        backgroundColor:'rgba(255,255,255,0.2)', borderColor:'#ffffff', borderWidth:1, borderRadius:2
       }]
     },
     options:{
@@ -1035,12 +1029,12 @@ function renderMiniCharts(){
       plugins:{legend:{display:false}},
       scales:{
         x:{ticks:{font:{family:fontFamilyMono, size:10}, callback:v=>'$'+(v/1000).toFixed(1)+'k'}, grid:{color:gridColor}},
-        y:{ticks:{font:{family:fontFamilyMono, size:11}, color:getCssVar('--text')}, grid:{display:false}}
+        y:{ticks:{font:{family:fontFamilyMono, size:11}}, grid:{display:false}}
       }
     }
   });
 
-  // 3. MARGEN VS POSICIÓN POR TRADE
+  // 3. CAPITAL OWNED VS BORROWED DISTRIBUTION
   const mpCtx=document.getElementById('margin-pos-chart').getContext('2d');
   if(marginPosInst)marginPosInst.destroy();
   const tLabels = trades.map((t,i)=>`T${i+1}`);
@@ -1050,13 +1044,13 @@ function renderMiniCharts(){
     data:{
       labels:tLabels,
       datasets:[
-        { label:'Margen Propio', data:trades.map(t=>t.capital), backgroundColor:getCssVar('--blue'), borderRadius:4 },
-        { label:'Posición Apalancada', data:trades.map(t=>t.position), backgroundColor:getCssVar('--purple-dim'), borderColor:getCssVar('--purple'), borderWidth:1, borderRadius:4 }
+        { label:'Margen Propio', data:trades.map(t=>t.capital), backgroundColor:'#6b7280', borderRadius:2 },
+        { label:'Posición Total', data:trades.map(t=>t.position), backgroundColor:'rgba(255,255,255,0.1)', borderColor:'#ffffff', borderWidth:1, borderRadius:2 }
       ]
     },
     options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{position:'top', labels:{font:{family:getCssVar('--font-sans')}}}},
+      plugins:{legend:{position:'top'}},
       scales:{
         x:{grid:{display:false}, ticks:{font:{family:fontFamilyMono, size:11}}},
         y:{grid:{color:gridColor}, ticks:{font:{family:fontFamilyMono, size:10}, callback:v=>'$'+v}}
@@ -1064,7 +1058,7 @@ function renderMiniCharts(){
     }
   });
 
-  // 4. HISTORIAL MIXTO (Entradas vs Tamaño a lo largo del tiempo)
+  // 4. CHRONO ENTRIES
   const mixCtx=document.getElementById('trades-mix-chart').getContext('2d');
   if(tradesMixInst)tradesMixInst.destroy();
   const timeSorted = [...trades].sort((a,b)=> a.date.localeCompare(b.date));
@@ -1077,11 +1071,11 @@ function renderMiniCharts(){
       datasets:[
         {
           type:'line', label:'P. Entrada', data:timeSorted.map(t=>t.entry),
-          borderColor:getCssVar('--amber'), backgroundColor:getCssVar('--amber'), borderWidth:2, yAxisID:'y1', pointRadius:4, tension:0.1
+          borderColor:'#ffffff', backgroundColor:'#ffffff', borderWidth:2, yAxisID:'y1', pointRadius:4, tension:0.1
         },
         {
           type:'bar', label:'Tamaño (USDT)', data:timeSorted.map(t=>t.position),
-          backgroundColor:getCssVar('--blue-dim'), borderColor:getCssVar('--blue'), borderWidth:1, borderRadius:4, yAxisID:'y'
+          backgroundColor:'rgba(156,163,175,0.3)', borderColor:'#9ca3af', borderWidth:1, borderRadius:2, yAxisID:'y'
         }
       ]
     },
@@ -1090,8 +1084,8 @@ function renderMiniCharts(){
       plugins:{legend:{display:false}},
       scales:{
         x:{grid:{display:false}, ticks:{font:{family:fontFamilyMono, size:10}}},
-        y:{type:'linear', display:true, position:'left', grid:{color:gridColor}, ticks:{color:getCssVar('--blue'), font:{family:fontFamilyMono, size:10}}},
-        y1:{type:'linear', display:true, position:'right', grid:{drawOnChartArea:false}, ticks:{color:getCssVar('--amber'), font:{family:fontFamilyMono, size:10}, callback:v=>'$'+(v/1000).toFixed(1)+'k'}}
+        y:{type:'linear', display:true, position:'left', grid:{color:gridColor}, ticks:{font:{family:fontFamilyMono, size:10}}},
+        y1:{type:'linear', display:true, position:'right', grid:{drawOnChartArea:false}, ticks:{font:{family:fontFamilyMono, size:10}, callback:v=>'$'+(v/1000).toFixed(1)+'k'}}
       }
     }
   });
@@ -1099,12 +1093,11 @@ function renderMiniCharts(){
 
 function destroyChart(c){if(c)try{c.destroy();}catch{}}
 
-// ── ESTRATEGIA CALCULADORA ──
+// ── CALCULADORA DCA INTERACTIVA ──
 function calcEstrategia(){
   if(!trades.length&&!capitals.length)return;
   const{cap,pos,avg,liq}=metrics();
 
-  // 1. DCA
   const targ=parseFloat(document.getElementById('est-target-avg').value);
   const entr=parseFloat(document.getElementById('est-entry-px').value);
   const l=parseFloat(document.getElementById('est-lev').value)||5;
@@ -1120,7 +1113,6 @@ function calcEstrategia(){
     resProm.innerHTML=`Para bajar el promedio a ${f(targ)}:<br>Comprar posición de: <strong>${f(newPos)}</strong><br>Inyección requerida: <strong style="color:var(--green)">${f(newCap)} USDT (x${l})</strong><br>Nueva Liquidación: <strong style="color:var(--red)">${f(newLiq)}</strong>`;
   }
 
-  // 2. DRAWDOWN
   const dropStr = document.getElementById('est-drop-px').value;
   const drop = parseFloat(dropStr);
   const resSurv=document.getElementById('res-supervivencia');
@@ -1138,7 +1130,6 @@ function calcEstrategia(){
     }
   }
 
-  // 3. TAKE PROFIT
   const tp=parseFloat(document.getElementById('est-tp-px').value);
   const resTp=document.getElementById('res-tp');
   if(pos===0){resTp.innerHTML='Necesitás un trade activo.';}
@@ -1149,7 +1140,6 @@ function calcEstrategia(){
     resTp.innerHTML=`Ganancia neta: <strong style="color:var(--green)">+${f(pnlTp)} USDT</strong><br>Retorno (ROI): <strong style="color:var(--green)">+${roi.toFixed(2)}%</strong> sobre tu capital de ${f(cap)}.`;
   }
 
-  // 4. INYECCIÓN
   const inj=parseFloat(document.getElementById('est-inject').value);
   const resInj=document.getElementById('res-inject');
   if(pos===0){resInj.innerHTML='Impacto nulo sin posiciones abiertas.';}
@@ -1163,7 +1153,7 @@ function calcEstrategia(){
   }
 }
 
-// ── BINANCE API & LWC ──
+// ── LIVE STREAM API NODES ──
 async function fetchPrice(){
   const btn=document.getElementById('btc-btn');
   const txt=document.getElementById('btc-txt');
@@ -1184,20 +1174,17 @@ async function fetchPrice(){
 
 async function fetchOHLCV(tf){
   try{
-    const limit=500;
+    const limit=450;
     const r=await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${tf}&limit=${limit}`);
     const data=await r.json();
     return data.map(k=>({
-      time:Math.floor(k[0]/1000),
-      open:parseFloat(k[1]),high:parseFloat(k[2]),low:parseFloat(k[3]),close:parseFloat(k[4]),
-      volume:parseFloat(k[5])
+      time:Math.floor(k[0]/1000),open:parseFloat(k[1]),high:parseFloat(k[2]),low:parseFloat(k[3]),close:parseFloat(k[4])
     }));
   }catch{return[];}
 }
 
 function calcEMA(closes,period){
-  const k=2/(period+1);
-  const ema=[];
+  const k=2/(period+1); const ema=[];
   for(let i=0;i<closes.length;i++){
     if(i<period-1){ema.push(null);continue;}
     if(i===period-1){ema.push(closes.slice(0,period).reduce((a,b)=>a+b)/period);continue;}
@@ -1219,7 +1206,7 @@ async function initBTCChart(){
   lwChart=null; lwSeries={};
 
   if(typeof LightweightCharts==='undefined'){
-    container.innerHTML='<div style="color:var(--red);font-family:var(--font-mono);font-size:.8rem;padding:2rem;text-align:center;">Error al cargar motor de gráficos.</div>';
+    container.innerHTML='<div style="color:var(--red);font-family:var(--font-mono);font-size:.8rem;padding:2rem;text-align:center;">Error de CDN.</div>';
     return;
   }
 
@@ -1227,19 +1214,19 @@ async function initBTCChart(){
   container.innerHTML=''; 
 
   if(!ohlcv.length){
-    container.innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center;">Sin datos. Revisa la conexión.</div>';
+    container.innerHTML='<div style="color:var(--text3);padding:2rem;text-align:center;">API Offline.</div>';
     return;
   }
   btcOhlcv=ohlcv;
   const closes=ohlcv.map(c=>c.close);
 
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-  const bg = isLight ? '#ffffff' : '#1e293b';
-  const textColor = isLight ? '#475569' : '#94a3b8';
-  const gridColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
+  const bg = isLight ? '#ffffff' : '#111111';
+  const textColor = isLight ? '#475569' : '#a0a0a5';
+  const gridColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)';
 
   lwChart=LightweightCharts.createChart(container,{
-    width:container.offsetWidth, height:container.offsetHeight || 450,
+    width:container.offsetWidth, height: 450,
     layout:{background:{color:bg}, textColor:textColor, fontFamily:getCssVar('--font-mono')},
     grid:{vertLines:{color:gridColor}, horzLines:{color:gridColor}},
     crosshair:{mode:LightweightCharts.CrosshairMode.Normal},
@@ -1256,17 +1243,17 @@ async function initBTCChart(){
 
   if(indicators.ema20){
     const ema20=calcEMA(closes,20);
-    lwChart.addLineSeries({color:'#3b82f6',lineWidth:1,priceLineVisible:false,lastValueVisible:false})
+    lwChart.addLineSeries({color:'#9ca3af',lineWidth:1,priceLineVisible:false,lastValueVisible:false})
            .setData(ohlcv.map((c,i)=>ema20[i]!=null?{time:c.time,value:ema20[i]}:null).filter(Boolean));
   }
   if(indicators.ema50){
     const ema50=calcEMA(closes,50);
-    lwChart.addLineSeries({color:'#f59e0b',lineWidth:1,priceLineVisible:false,lastValueVisible:false})
+    lwChart.addLineSeries({color:'#6b7280',lineWidth:1,priceLineVisible:false,lastValueVisible:false})
            .setData(ohlcv.map((c,i)=>ema50[i]!=null?{time:c.time,value:ema50[i]}:null).filter(Boolean));
   }
   if(indicators.ema200){
     const ema200=calcEMA(closes,200);
-    lwChart.addLineSeries({color:'#8b5cf6',lineWidth:2,priceLineVisible:false,lastValueVisible:false})
+    lwChart.addLineSeries({color:'#ffffff',lineWidth:1.5,priceLineVisible:false,lastValueVisible:false})
            .setData(ohlcv.map((c,i)=>ema200[i]!=null?{time:c.time,value:ema200[i]}:null).filter(Boolean));
   }
 
@@ -1274,12 +1261,11 @@ async function initBTCChart(){
     const{avg,liq}=metrics();
     if(avg>0){
       candleSeries.createPriceLine({price:avg, color:getCssVar('--amber'), lineWidth:1, lineStyle:LightweightCharts.LineStyle.Dashed, axisLabelVisible:true, title:'AVG'});
-      candleSeries.createPriceLine({price:liq, color:getCssVar('--red'), lineWidth:2, lineStyle:LightweightCharts.LineStyle.Solid, axisLabelVisible:true, title:'LIQ'});
+      candleSeries.createPriceLine({price:liq, color:getCssVar('--red'), lineWidth:2, axisLabelVisible:true, title:'LIQ'});
     }
   }
 
   lwChart.timeScale().fitContent();
-  new ResizeObserver(()=>{ if(lwChart)lwChart.applyOptions({width:container.offsetWidth}); }).observe(container);
 }
 
 function toggleInd(key,btn){
@@ -1288,10 +1274,9 @@ function toggleInd(key,btn){
   if(activeTab==='grafico')initBTCChart();
 }
 
-// ── INICIALIZACIÓN ──
+// ── INITIALIZE ──
 document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
 document.getElementById('cap-date').value=new Date().toISOString().split('T')[0];
-setTimeout(()=>{if(document.getElementById('modal-trade').classList.contains('open'))selectCapitalType('existing');},100);
 </script>
 </body>
 </html>
