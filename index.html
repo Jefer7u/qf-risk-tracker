@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quantfury — BTC Risk Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <style>
 :root {
   --bg:#0a0a0a; --bg2:#111; --bg3:#181818;
@@ -30,6 +35,23 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:
 .btc-btn:hover{border-color:var(--border2);}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--text3);}
 .btc-btn.live .dot{background:var(--green);box-shadow:0 0 6px var(--green);}
+
+/* Login Screen */
+#auth-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:80vh; }
+.auth-box { background:var(--bg2); border:1px solid var(--border); border-radius:var(--rl); padding:2.5rem; width:100%; max-width:380px; text-align:center; }
+.auth-box h2 { font-family:var(--mono); font-weight:500; margin-bottom:1.5rem; }
+.auth-box input { background:var(--bg3); border:1px solid var(--border); border-radius:var(--r); color:var(--text); font-family:var(--mono); font-size:.9rem; padding:10px 12px; width:100%; margin-bottom:12px; outline:none; }
+.auth-box input:focus { border-color:var(--border2); }
+.auth-btn { background:var(--text); color:var(--bg); font-family:var(--mono); font-weight:500; font-size:.9rem; padding:10px; width:100%; border:none; border-radius:var(--r); cursor:pointer; margin-bottom:10px; }
+.auth-btn:hover { opacity:.9; }
+.auth-btn.google { background:#ea4335; color:#fff; }
+.auth-btn.outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+.auth-btn.outline:hover { background:var(--bg3); }
+.divider { display:flex; align-items:center; text-align:center; margin:1rem 0; color:var(--text3); font-size:.8rem; }
+.divider::before, .divider::after { content:''; flex:1; border-bottom:1px solid var(--border); }
+.divider:not(:empty)::before { margin-right:.5em; }
+.divider:not(:empty)::after { margin-left:.5em; }
+#auth-error { color:var(--red); font-size:.8rem; margin-bottom:1rem; min-height:1rem; }
 
 /* Alerts */
 .alert{display:none;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r);font-family:var(--mono);font-size:.78rem;margin-bottom:1.25rem;border-left:3px solid;}
@@ -110,17 +132,33 @@ input:focus,select:focus{border-color:var(--border2);}
 </style>
 </head>
 <body>
-<div class="shell">
+
+<div class="shell" id="auth-screen">
+  <div class="auth-box">
+    <h2>Tracker Login</h2>
+    <div id="auth-error"></div>
+    <input type="email" id="email" placeholder="Correo electrónico">
+    <input type="password" id="pass" placeholder="Contraseña">
+    <button class="auth-btn" onclick="signInEmail()">Ingresar</button>
+    <button class="auth-btn outline" onclick="registerEmail()">Crear cuenta</button>
+    <div class="divider">O</div>
+    <button class="auth-btn google" onclick="signInGoogle()">Continuar con Google</button>
+  </div>
+</div>
+
+<div class="shell" id="app-screen" style="display:none;">
 
   <div class="header">
     <div>
       <h1>BTC/USDT — Risk Tracker</h1>
-      <p>Long · Margen Cruzado · Quantfury</p>
+      <p>Long · Margen Cruzado · <span id="user-display" style="color:var(--text)"></span></p>
     </div>
-    <button class="btc-btn" id="btc-btn" onclick="fetchPrice()">
-      <span class="dot"></span>
-      <span id="btc-txt">Actualizar precio</span>
-    </button>
+    <div style="display:flex; gap:10px;">
+      <button class="btc-btn" id="btc-btn" onclick="fetchPrice()">
+        <span class="dot"></span><span id="btc-txt">Actualizar</span>
+      </button>
+      <button class="btc-btn" onclick="logOut()">Salir</button>
+    </div>
   </div>
 
   <div class="alert alert-red"   id="a-danger">⚠ Liquidación inminente — precio a menos del 5% del nivel de liquidación.</div>
@@ -189,7 +227,6 @@ input:focus,select:focus{border-color:var(--border2);}
       <div class="est-section">
         <div class="est-title">🎯 Proyección de DCA (Bajar Promedio)</div>
         <div class="note" style="margin-bottom:15px;">Calculá cuánto capital necesitás inyectar para llevar tu precio promedio actual a una meta específica.</div>
-        
         <div class="fg"><label>Promedio objetivo deseado ($)</label><input type="number" id="est-target-avg" placeholder="65000" oninput="calcEstrategia()"></div>
         <div class="fg"><label>Precio de compra estimado ($)</label><input type="number" id="est-entry-px" placeholder="58000" oninput="calcEstrategia()"></div>
         <div class="fg"><label>Apalancamiento a usar</label>
@@ -199,13 +236,10 @@ input:focus,select:focus{border-color:var(--border2);}
         </div>
         <div class="result-box" id="res-promedio">Ingresá los datos para simular tu próxima entrada.</div>
       </div>
-
       <div class="est-section">
         <div class="est-title">🛡️ Plan de Supervivencia (Drawdown)</div>
         <div class="note" style="margin-bottom:15px;">Calculá exactamente cuánto margen extra debés tener listo en tu wallet si el precio se desploma abruptamente.</div>
-        
         <div class="fg"><label>Simular caída de BTC a ($)</label><input type="number" id="est-drop-px" placeholder="45000" oninput="calcEstrategia()"></div>
-        
         <div class="result-box" id="res-supervivencia" style="margin-top:20px; padding-top:15px;">Esperando escenario de precio...</div>
       </div>
     </div>
@@ -231,35 +265,107 @@ input:focus,select:focus{border-color:var(--border2);}
   </div>
 
 </div><script>
-// ── Estado ────────────────────────────────────────────────────────────────────
-const SK = 'qf_v10'; 
-let btcPrice = null;
+// ── 1. CONFIGURACIÓN FIREBASE ─────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDK1fv8aUhRdUDW-Z9XQF7sd7OiIqrx5tQ",
+  authDomain: "qf-risk-tracker.firebaseapp.com",
+  projectId: "qf-risk-tracker",
+  storageBucket: "qf-risk-tracker.firebasestorage.app",
+  messagingSenderId: "839379386116",
+  appId: "1:839379386116:web:ce306e6ce6d1694681da51",
+  measurementId: "G-MVE6FG2HSV"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// ── 2. ESTADO GLOBAL ──────────────────────────────────────────────────────────
+let trades    = [];
+let btcPrice  = null;
 let activeTab = 'trades';
 let editingId = null;
 
-// Trades extraídos de la captura real de Quantfury
-let trades = JSON.parse(localStorage.getItem(SK) || 'null') || [
-  { id:1, date:'2026-05-23', capital:1000, position:5000, entry:75342.28, leverage:5 },
-  { id:2, date:'2026-05-30', capital:200,  position:1000, entry:73500.82, leverage:5 },
-  { id:3, date:'2026-06-01', capital:200,  position:1000, entry:72001.06, leverage:5 },
-  { id:4, date:'2026-06-02', capital:200,  position:1000, entry:70008.62, leverage:5 },
-  { id:5, date:'2026-06-02', capital:200,  position:1000, entry:67007.97, leverage:5 },
-  { id:6, date:'2026-06-03', capital:200,  position:1000, entry:66004.00, leverage:5 },
-  { id:7, date:'2026-06-05', capital:200,  position:1000, entry:62009.21, leverage:5 },
-  { id:8, date:'2026-06-05', capital:400,  position:2000, entry:60009.11, leverage:5 }
-];
+// ── 3. AUTENTICACIÓN ──────────────────────────────────────────────────────────
+const errBox = document.getElementById('auth-error');
 
-function save(){ localStorage.setItem(SK, JSON.stringify(trades)); }
+function showErr(msg) { errBox.textContent = msg; setTimeout(()=> errBox.textContent='', 4000); }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+async function registerEmail() {
+  const email = document.getElementById('email').value;
+  const pass  = document.getElementById('pass').value;
+  if(!email || !pass) return showErr("Completa email y contraseña");
+  try { await auth.createUserWithEmailAndPassword(email, pass); } 
+  catch (e) { showErr(e.message); }
+}
+
+async function signInEmail() {
+  const email = document.getElementById('email').value;
+  const pass  = document.getElementById('pass').value;
+  if(!email || !pass) return showErr("Completa email y contraseña");
+  try { await auth.signInWithEmailAndPassword(email, pass); } 
+  catch (e) { showErr("Credenciales incorrectas"); }
+}
+
+async function signInGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try { await auth.signInWithPopup(provider); } 
+  catch (e) { showErr("Error con Google: " + e.message); }
+}
+
+function logOut() {
+  auth.signOut();
+}
+
+// Escuchar cambios de sesión
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'block';
+    document.getElementById('user-display').textContent = user.email || 'Cuenta Google';
+    await loadTrades();
+    fetchPrice(); // Actualiza precio y renderiza la UI
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app-screen').style.display = 'none';
+    trades = [];
+  }
+});
+
+// ── 4. BASE DE DATOS (FIRESTORE) ──────────────────────────────────────────────
+async function loadTrades() {
+  const user = auth.currentUser;
+  if(!user) return;
+  try {
+    const doc = await db.collection('users').doc(user.uid).get();
+    if (doc.exists && doc.data().trades) {
+      trades = doc.data().trades;
+    } else {
+      trades = []; // Usuario nuevo, sin trades.
+    }
+  } catch(e) {
+    console.error("Error al cargar trades:", e);
+  }
+}
+
+async function pushToDatabase() {
+  const user = auth.currentUser;
+  if(!user) return;
+  try {
+    await db.collection('users').doc(user.uid).set({ trades });
+  } catch(e) {
+    console.error("Error al guardar en la nube:", e);
+    alert("Hubo un error guardando los datos en la nube. Revisa tu conexión.");
+  }
+}
+
+// ── 5. LÓGICA DE LA APLICACIÓN ────────────────────────────────────────────────
 const f  = (n,d=0) => '$'+Number(n.toFixed(d)).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 const fN = (n,d=2) => Number(n.toFixed(d)).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
-
 const MAINT = 0; 
 
-function liqIndiv(entry, lev){ 
-  return entry * (1 - 1/lev + MAINT); 
-}
+function liqIndiv(entry, lev){ return entry * (1 - 1/lev + MAINT); }
 
 function liqPortfolio(list){
   const pos = list.reduce((s,t)=>s+t.position,0);
@@ -281,7 +387,6 @@ function metrics(){
   return {cap,pos,avg,lev,liq,mUsed,mFree};
 }
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
 function setTab(name, btn){
   activeTab = name;
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
@@ -299,9 +404,13 @@ function goTab(name){
   document.getElementById('tbtn-'+name).classList.add('active');
 }
 
-// ── Render principal ──────────────────────────────────────────────────────────
 function render(){
-  if(!trades.length) return;
+  if(!trades.length) {
+    document.getElementById('m-cap').textContent = "$0";
+    document.getElementById('m-pos').textContent = "$0";
+    document.getElementById('trades-body').innerHTML = `<tr><td colspan="8" style="text-align:center">No hay trades registrados. ¡Agrega tu primero!</td></tr>`;
+    return;
+  }
   const {cap,pos,avg,lev,liq,mUsed,mFree} = metrics();
   const ref = btcPrice || avg;
 
@@ -309,7 +418,6 @@ function render(){
   document.getElementById('m-pos').textContent = f(pos);
   document.getElementById('m-avg').textContent = f(avg);
 
-  // PnL
   if(btcPrice != null){
     const pnl    = (btcPrice-avg)/avg*pos;
     const pnlPct = pnl/cap*100;
@@ -319,12 +427,9 @@ function render(){
     document.getElementById('m-pnl-sub').textContent = (pnlPct>=0?'+':'')+pnlPct.toFixed(2)+'% sobre capital';
   }
 
-  // Liquidación
   const dist = (ref-liq)/ref*100;
   document.getElementById('c-liq').textContent = f(liq);
-  document.getElementById('c-liq-dist').textContent = btcPrice
-    ? dist.toFixed(1)+'% por debajo del precio actual'
-    : 'Basado en precio de entrada promedio';
+  document.getElementById('c-liq-dist').textContent = btcPrice ? dist.toFixed(1)+'% por debajo del precio actual' : 'Basado en precio de entrada promedio';
   const danger=dist<10, warn=dist<20;
   const bar = document.getElementById('liq-bar');
   bar.style.width      = Math.min(100,Math.max(0,100-dist))+'%';
@@ -333,26 +438,17 @@ function render(){
   note.textContent = danger?'⚠ Riesgo ALTO':warn?'△ Precaución':'✓ Margen cómodo';
   note.style.color = danger?'var(--red)':warn?'var(--amber)':'var(--green)';
 
-  // Apalancamiento
   document.getElementById('c-lev').textContent = fN(lev,1)+'x';
   
-  // Limitar tags a 4 para no saturar UI, mostrar resumen si hay más
-  let tagsHtml = trades.slice(0,4).map(t=>
-    `<span class="tag ${t.leverage<=5?'tag-green':t.leverage<=7?'tag-amber':'tag-red'}">x${Number(t.leverage.toFixed(2))} · ${f(t.position)}</span>`
-  ).join('');
+  let tagsHtml = trades.slice(0,4).map(t=> `<span class="tag ${t.leverage<=5?'tag-green':t.leverage<=7?'tag-amber':'tag-red'}">x${Number(t.leverage.toFixed(2))} · ${f(t.position)}</span>`).join('');
   if (trades.length > 4) tagsHtml += `<span class="tag" style="background:var(--bg3)">+${trades.length - 4} trades</span>`;
   document.getElementById('lev-tags').innerHTML = tagsHtml;
-  
-  document.getElementById('c-margin').textContent =
-    `Margen requerido por app: ${f(mUsed)} · Disponible extra: ${f(mFree)}`;
+  document.getElementById('c-margin').textContent = `Margen requerido por app: ${f(mUsed)} · Disponible extra: ${f(mFree)}`;
 
-  // Simulador de Stop Loss / Margen
   const slInput = document.getElementById('sl-pct');
   const maxLossPct = Math.floor(lev * 100) || 100; 
   slInput.min = -maxLossPct; 
-  if (parseInt(slInput.value) < -maxLossPct) {
-    slInput.value = -maxLossPct;
-  }
+  if (parseInt(slInput.value) < -maxLossPct) slInput.value = -maxLossPct;
 
   const pnlPctVal = parseInt(slInput.value); 
   const slPct     = Math.abs(pnlPctVal) / 100;
@@ -371,22 +467,17 @@ function render(){
     document.getElementById('sl-loss').innerHTML     = `${f(slLoss)} <span style="color:var(--red)">(Agregar ${f(extraMargin)})</span>`;
   }
 
-  // Alertas
   document.getElementById('a-danger').classList.remove('show');
   document.getElementById('a-warn').classList.remove('show');
   if(btcPrice != null){
-    if(dist<5)       document.getElementById('a-danger').classList.add('show');
-    else if(dist<15){
-      document.getElementById('a-warn').classList.add('show');
-      document.getElementById('a-dist').textContent = dist.toFixed(1);
-    }
+    if(dist<5) document.getElementById('a-danger').classList.add('show');
+    else if(dist<15){ document.getElementById('a-warn').classList.add('show'); document.getElementById('a-dist').textContent = dist.toFixed(1); }
   }
 
   renderTrades();
   if(activeTab==='estrategia') calcEstrategia();
 }
 
-// ── Tabla trades ──────────────────────────────────────────────────────────────
 function renderTrades(){
   const tbody = document.getElementById('trades-body');
   const tfoot = document.getElementById('trades-foot');
@@ -404,8 +495,7 @@ function renderTrades(){
       <td><span class="tag ${t.leverage<=5?'tag-green':t.leverage<=7?'tag-amber':'tag-red'}">x${Number(t.leverage.toFixed(2))}</span></td>
       <td style="color:var(--text)">${f(t.entry)}</td>
       <td style="color:var(--red)">${f(liq)}</td>
-      <td style="color:${pnl==null?'var(--text3)':pnl>=0?'var(--green)':'var(--red)'}">
-        ${pnl==null?'—':(pnl>=0?'+':'')+f(pnl)}</td>
+      <td style="color:${pnl==null?'var(--text3)':pnl>=0?'var(--green)':'var(--red)'}">${pnl==null?'—':(pnl>=0?'+':'')+f(pnl)}</td>
       <td style="white-space:nowrap;">
         <button class="btn-del" onclick="editTrade(${t.id})" title="Editar" style="margin-right:4px;">✎</button>
         <button class="btn-del red" onclick="delTrade(${t.id})" title="Eliminar">✕</button>
@@ -420,17 +510,14 @@ function renderTrades(){
     <td><span class="tag tag-blue">${fN(lev,2)}x</span></td>
     <td>${f(avg)}</td>
     <td style="color:var(--red)" title="Liquidación real del portafolio">${f(liq)} ★</td>
-    <td style="color:${tot==null?'var(--text3)':tot>=0?'var(--green)':'var(--red)'}">
-      ${tot==null?'—':(tot>=0?'+':'')+f(tot)}</td>
+    <td style="color:${tot==null?'var(--text3)':tot>=0?'var(--green)':'var(--red)'}">${tot==null?'—':(tot>=0?'+':'')+f(tot)}</td>
     <td></td></tr>`;
 }
 
-// ── Simuladores Estrategia ────────────────────────────────────────────────────
 function calcEstrategia() {
   if(!trades.length) return;
   const {cap, pos, avg} = metrics();
 
-  // --- Módulo DCA / Promedio ---
   const elTarg = document.getElementById('est-target-avg');
   const elEntr = document.getElementById('est-entry-px');
   const elLev  = document.getElementById('est-lev');
@@ -448,14 +535,12 @@ function calcEstrategia() {
     } else if (entr >= targ) {
       resProm.innerHTML = `<span style="color:var(--red)">Para bajar el promedio a ${f(targ)}, debés comprar más barato que eso.</span>`;
     } else {
-      // Math: NewPos = CurrentPos * (CurrentAvg - TargetAvg) / (TargetAvg - EntryPrice)
       const newPos = pos * (avg - targ) / (targ - entr);
       const newCap = newPos / l;
       resProm.innerHTML = `Para bajar tu promedio a <strong>${f(targ)}</strong> comprando BTC a ${f(entr)}, necesitás agregar una posición de <strong>${f(newPos)}</strong>.<br><br>Esto requiere que inyectes <strong style="color:var(--green)">${f(newCap)} USDT</strong> de margen nuevo a x${l}. Tu portafolio total pasaría a ser de ${f(pos + newPos)}.`;
     }
   }
 
-  // --- Módulo Supervivencia ---
   const elDrop = document.getElementById('est-drop-px');
   const resSurv = document.getElementById('res-supervivencia');
 
@@ -468,7 +553,6 @@ function calcEstrategia() {
     } else {
       const pnlDrop = (drop - avg) / avg * pos;
       const isLiquidated = pnlDrop <= -cap;
-      
       let msg = `P&L flotante si BTC cae a ${f(drop)}: <strong style="color:var(--red)">${f(pnlDrop)} USDT</strong>.<br><br>`;
       
       if (isLiquidated) {
@@ -483,28 +567,25 @@ function calcEstrategia() {
   }
 }
 
-// ── Agregar / editar trades ───────────────────────────────────────────────────
 function autoCalcLev() {
   const cap = parseFloat(document.getElementById('inp-capital').value);
   const pos = parseFloat(document.getElementById('inp-position').value);
   const levDisplay = document.getElementById('inp-lev-display');
   if (cap > 0 && pos > 0) {
-    const calculatedLev = pos / cap;
-    levDisplay.value = Number(calculatedLev.toFixed(2)) + 'x';
+    levDisplay.value = Number((pos / cap).toFixed(2)) + 'x';
   } else {
     levDisplay.value = '0x';
   }
 }
 
-function saveTrade(){
+async function saveTrade(){
   const date     = document.getElementById('inp-date').value;
   const capital  = parseFloat(document.getElementById('inp-capital').value);
   const position = parseFloat(document.getElementById('inp-position').value);
   const entry    = parseFloat(document.getElementById('inp-entry').value);
 
   if(!date || isNaN(capital)||capital<=0 || isNaN(position)||position<=0 || isNaN(entry)||entry<=0){
-    alert('Completá todos los campos con valores válidos.');
-    return;
+    return alert('Completá todos los campos con valores válidos.');
   }
 
   const leverage = position / capital;
@@ -512,14 +593,18 @@ function saveTrade(){
   if (editingId) {
     const idx = trades.findIndex(t => t.id === editingId);
     if (idx !== -1) trades[idx] = { ...trades[idx], date, capital, position, entry, leverage };
-    cancelEdit(); 
+    editingId = null;
+    document.getElementById('form-title').textContent = 'Registrar nuevo trade';
+    document.getElementById('btn-submit').textContent = '+ Registrar trade';
+    document.getElementById('btn-cancel').style.display = 'none';
   } else {
     trades.push({id:Date.now(), date, capital, position, entry, leverage});
-    save();
-    resetForm();
-    goTab('trades');
-    render();
   }
+
+  await pushToDatabase(); 
+  resetForm();
+  goTab('trades');
+  render();
 }
 
 function editTrade(id) {
@@ -545,9 +630,7 @@ function cancelEdit() {
   document.getElementById('form-title').textContent = 'Registrar nuevo trade';
   document.getElementById('btn-submit').textContent = '+ Registrar trade';
   document.getElementById('btn-cancel').style.display = 'none';
-  save();
   goTab('trades');
-  render();
 }
 
 function resetForm() {
@@ -558,14 +641,13 @@ function resetForm() {
   autoCalcLev();
 }
 
-function delTrade(id){
+async function delTrade(id){
   if(!confirm('¿Estás seguro de eliminar este trade?')) return;
   trades = trades.filter(t=>t.id!==id);
-  save();
+  await pushToDatabase(); 
   render();
 }
 
-// ── Precio BTC (Binance público) ──────────────────────────────────────────────
 async function fetchPrice(){
   const btn = document.getElementById('btc-btn');
   const txt = document.getElementById('btc-txt');
@@ -583,10 +665,7 @@ async function fetchPrice(){
   render();
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
 document.getElementById('inp-date').value = new Date().toISOString().split('T')[0];
-render();
-fetchPrice();
 </script>
 </body>
 </html>
