@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quantfury — BTC Risk Tracker Pro v3.6</title>
+<title>Quantfury — BTC Risk Tracker Pro v3.7</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111111'/><text x='50' y='55' font-family='monospace' font-size='38' font-weight='bold' fill='%23ffffff' text-anchor='middle' dominant-baseline='middle'>JEF</text></svg>">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -297,6 +297,7 @@ input:focus,select:focus{border-color:var(--text2);}
         <button class="ind-btn on ema20" onclick="toggleInd('ema20',this)">EMA 20</button>
         <button class="ind-btn on ema50" onclick="toggleInd('ema50',this)">EMA 50</button>
         <button class="ind-btn on ema200" onclick="toggleInd('ema200',this)">EMA 200</button>
+        <button class="ind-btn on sr" onclick="toggleInd('sr',this)" title="Muestra el Alto y Bajo de 20 periodos">Soporte/Resist.</button>
         <div style="flex:1;"></div>
         <div class="tf-group">
           <button class="tf-btn" onclick="changeTimeframe('1d', this)">1D</button>
@@ -515,7 +516,7 @@ let btcPrice=null;
 let activeTab='trades';
 let editingId=null;
 let selectedCapitalType='existing';
-let indicators={ema20:true,ema50:true,ema200:true};
+let indicators={ema20:true,ema50:true,ema200:true,sr:true}; // Soportes/Resistencias activados
 let currentTf='1w'; 
 
 // Gráficos Estructurales
@@ -577,19 +578,29 @@ const fN=(n,d=2)=>Number(n.toFixed(d)).toLocaleString('en-US',{minimumFractionDi
 function liqIndiv(entry,lev){return lev>0?entry*(1-1/lev):0;}
 
 function metrics(){
-  const tradeCap=trades.reduce((s,t)=>s+t.capital,0);
-  const extraCap=capitals.reduce((s,c)=>s+c.amount,0);
-  const cap=tradeCap+extraCap;
+  const tradeCap=trades.reduce((s,t)=>s+t.capital,0); // Capital total usado en posiciones
+  const extraCap=capitals.reduce((s,c)=>s+c.amount,0); // Margen libre extra depositado
+  const cap=tradeCap+extraCap; // Fondo global (Cross Margin Pool)
   const pos=trades.reduce((s,t)=>s+t.position,0);
   
   let sumPosOverEntry=trades.reduce((s,t)=>s+t.position/t.entry,0);
   const avg=sumPosOverEntry>0?pos/sumPosOverEntry:0;
-  const lev=cap>0?pos/cap:0;
   
+  // Apalancamiento Global vs Apalancamiento Puro (Solo Trades)
+  const lev=cap>0?pos/cap:0;
+  const levTradesOnly = tradeCap>0 ? pos/tradeCap : 0; 
+  
+  // Liquidación Global vs Liquidación Exclusiva (Solo Trades)
   const liq=sumPosOverEntry>0?(pos-cap)/sumPosOverEntry:0;
+  const liqTradesOnly=sumPosOverEntry>0?(pos-tradeCap)/sumPosOverEntry:0;
+  
   const mUsed=trades.reduce((s,t)=>s+t.position/t.leverage,0);
   const mFree=Math.max(0, cap-mUsed);
-  return{cap,tradeCap,extraCap,pos,avg,lev,liq: Math.max(0, liq),mUsed,mFree};
+  
+  return{
+      cap, tradeCap, extraCap, pos, avg, lev, levTradesOnly, 
+      liq: Math.max(0, liq), liqTradesOnly: Math.max(0, liqTradesOnly), mUsed, mFree
+  };
 }
 
 function setTab(name,btn){
@@ -612,7 +623,6 @@ function goTab(name){
 
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
-// Close modals clicking outside
 document.querySelectorAll('.modal-overlay').forEach(o=>{
   o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});
 });
@@ -630,7 +640,6 @@ function selectCapitalType(type){
   }
 }
 
-// NUEVA FUNCIÓN AGREGADA
 function openCapitalModal(){
   document.getElementById('cap-amount').value = '';
   document.getElementById('cap-note').value = '';
@@ -761,7 +770,6 @@ function render(){
   let tagsHtml=trades.slice(0,3).map(t=>`<span class="tag ${t.leverage<=5?'tag-green':t.leverage<=10?'tag-amber':'tag-red'}">x${Number((t.position/(t.capital||1)).toFixed(1))} · ${f(t.position)}</span>`).join('');
   document.getElementById('lev-tags').innerHTML=tagsHtml||'<span class="note">Pool Inactivo</span>';
 
-  // ── RECALIBRACIÓN DEL DESLIZADOR ──
   const slInput=document.getElementById('sl-pct');
   const pnlPctVal=parseInt(slInput.value); 
   const btcDropPct=Math.abs(pnlPctVal)/100;
@@ -819,13 +827,17 @@ function renderTrades(){
     tbody.appendChild(tr);
   });
   
-  const{cap,pos,avg,lev,liq}=metrics();
+  const{tradeCap, pos, avg, levTradesOnly, liqTradesOnly}=metrics();
   const tot=btcPrice!=null?trades.reduce((s,t)=>s+((btcPrice-t.entry)/t.entry)*t.position,0):null;
+  
   tfoot.innerHTML=`<tr>
-    <td>GLOBAL</td><td>${f(cap)}</td><td></td><td>${f(pos)}</td>
-    <td><span class="tag tag-blue">${fN(lev,2)}x</span></td>
+    <td>TOTAL TRADES</td>
+    <td style="color:var(--text)">${f(tradeCap)}</td>
+    <td></td>
+    <td style="color:var(--text)">${f(pos)}</td>
+    <td><span class="tag tag-blue">${fN(levTradesOnly,2)}x</span></td>
     <td style="color:var(--amber)">${f(avg)}</td>
-    <td style="color:var(--red)">${f(liq)} ★</td>
+    <td style="color:var(--red)">${f(liqTradesOnly)} ★</td>
     <td style="color:${tot==null?'var(--text3)':tot>=0?'var(--green)':'var(--red)'}">${tot==null?'—':(tot>=0?'+':'')+f(tot)}</td>
     <td></td></tr>`;
 }
@@ -927,7 +939,6 @@ function renderMiniCharts(){
   const monoFont = getCssVar('--font-mono');
   const lineGrid = getCssVar('--grid-line');
 
-  // 1. SURVIVAL LINE
   const survCtx=document.getElementById('survival-chart').getContext('2d');
   if(survInst) survInst.destroy();
   const sPrices=[]; const sEquity=[];
@@ -961,7 +972,6 @@ function renderMiniCharts(){
     }
   });
 
-  // 2. MAPA DCA
   const dcaCtx=document.getElementById('dca-map-chart').getContext('2d');
   if(dcaInst) dcaInst.destroy();
   const sorted = [...trades].sort((a,b)=> a.entry - b.entry);
@@ -982,7 +992,6 @@ function renderMiniCharts(){
     }
   });
 
-  // 3. RELACIÓN MARGEN VS POSICIÓN
   const mpCtx=document.getElementById('margin-pos-chart').getContext('2d');
   if(marginPosInst) marginPosInst.destroy();
   
@@ -1005,7 +1014,6 @@ function renderMiniCharts(){
     }
   });
 
-  // 4. MIX CHART EVOLUCIÓN HISTÓRICA
   const mixCtx=document.getElementById('trades-mix-chart').getContext('2d');
   if(tradesMixInst) tradesMixInst.destroy();
   const timeSorted = [...trades].sort((a,b)=> a.date.localeCompare(b.date));
@@ -1030,7 +1038,6 @@ function renderMiniCharts(){
     }
   });
 
-  // 5: MARGEN LIBRE POR ESCENARIO
   const bufferCtx = document.getElementById('margin-buffer-chart').getContext('2d');
   if(bufferInst) bufferInst.destroy();
   const bPrices = []; const bBuffer = [];
@@ -1056,7 +1063,6 @@ function renderMiniCharts(){
     }
   });
 
-  // 6: EVOLUCIÓN APALANCAMIENTO EFECTIVO
   const levCtx = document.getElementById('leverage-timeline-chart').getContext('2d');
   if(levTimelineInst) levTimelineInst.destroy();
   let cumPos = 0; let cumCap = capitals.reduce((s,c)=>s+c.amount,0);
@@ -1144,7 +1150,6 @@ function calcEstrategia(){
   }
 }
 
-// NUEVAS FUNCIONES DE API SEPARADAS Y LIMPIAS
 async function fetchPrice(){
   try{
     const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
@@ -1161,7 +1166,6 @@ async function fetchPrice(){
 
 async function fetchOHLCV(tf) { 
   try {
-    // Solicitud dinámica que usa la variable "tf" que se le envíe (1d, 1w, 1M)
     const rHist = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${tf}&limit=250`);
     const data = await rHist.json();
     return data.map(k=>({ time:Math.floor(k[0]/1000),open:parseFloat(k[1]),high:parseFloat(k[2]),low:parseFloat(k[3]),close:parseFloat(k[4]) }));
@@ -1181,7 +1185,21 @@ function calcEMA(closes,period){
   return ema;
 }
 
-// CORRECCIÓN DEL SELECTOR DE TIEMPO
+// NUEVA FUNCIÓN PARA CALCULAR SOPORTES Y RESISTENCIAS (Canales Donchian de 20 periodos)
+function calcSR(ohlcv, period=20) {
+  const res = []; const sup = [];
+  for(let i=0; i<ohlcv.length; i++) {
+    if(i < period - 1) { res.push(null); sup.push(null); continue; }
+    let max = -Infinity; let min = Infinity;
+    for(let j=0; j<period; j++) {
+      if(ohlcv[i-j].high > max) max = ohlcv[i-j].high;
+      if(ohlcv[i-j].low < min) min = ohlcv[i-j].low;
+    }
+    res.push(max); sup.push(min);
+  }
+  return {sup, res};
+}
+
 async function changeTimeframe(tf, btn){
   currentTf = tf;
   document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('on'));
@@ -1193,7 +1211,6 @@ async function initBTCChart(){
   const container=document.getElementById('btc-chart'); if(!container) return;
   container.innerHTML=''; lwChart=null;
   
-  // Ahora espera dinámicamente los datos de la nueva temporalidad
   const ohlcv = await fetchOHLCV(currentTf); 
   if(!ohlcv.length) return;
   const closes=ohlcv.map(c=>c.close);
@@ -1227,10 +1244,23 @@ async function initBTCChart(){
     const ema200=calcEMA(closes,200);
     lwChart.addLineSeries({color:'#8b5cf6',lineWidth:1.5,priceLineVisible:false,lastValueVisible:false}).setData(ohlcv.map((c,i)=>ema200[i]!=null?{time:c.time,value:ema200[i]}:null).filter(Boolean));
   }
+  
+  // INYECCIÓN DE INDICADOR DE SOPORTE Y RESISTENCIA
+  if(indicators.sr){
+    const {sup, res} = calcSR(ohlcv, 20);
+    
+    // Línea de Resistencia (Roja, estilo dashed: 2)
+    const resLine = lwChart.addLineSeries({color:'rgba(239, 68, 68, 0.8)', lineWidth:1, lineStyle: 2, priceLineVisible:false, lastValueVisible:false});
+    resLine.setData(ohlcv.map((c,i)=>res[i]!=null?{time:c.time,value:res[i]}:null).filter(Boolean));
+    
+    // Línea de Soporte (Verde, estilo dashed: 2)
+    const supLine = lwChart.addLineSeries({color:'rgba(16, 185, 129, 0.8)', lineWidth:1, lineStyle: 2, priceLineVisible:false, lastValueVisible:false});
+    supLine.setData(ohlcv.map((c,i)=>sup[i]!=null?{time:c.time,value:sup[i]}:null).filter(Boolean));
+  }
+
   lwChart.timeScale().fitContent();
 }
 
-// CORRECCIÓN RESIZE OBSERVER PARA QUE EL GRÁFICO NO SE CORTE
 window.addEventListener('resize', () => {
   if (lwChart && activeTab === 'grafico') {
     const container = document.getElementById('btc-chart');
