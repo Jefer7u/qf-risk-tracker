@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quantfury — BTC Risk Tracker Pro v3.5</title>
+<title>Quantfury — BTC Risk Tracker Pro v3.6</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111111'/><text x='50' y='55' font-family='monospace' font-size='38' font-weight='bold' fill='%23ffffff' text-anchor='middle' dominant-baseline='middle'>JEF</text></svg>">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -347,8 +347,8 @@ input:focus,select:focus{border-color:var(--text2);}
         <div>
           <div class="est-title">🎯 Proyección de DCA Objetivo</div>
           <div class="note" style="margin-bottom:15px;">¿Cuánto capital necesitás inyectar para llevar tu promedio a un precio específico?</div>
-          <div class="fg"><label>Promedio deseado ($)</label><input type="number" id="est-target-avg" placeholder="Ej: 60000" oninput="calcEstrategia()"></div>
-          <div class="fg"><label>Comprando al precio de ($)</label><input type="number" id="est-entry-px" placeholder="Ej: 55000" oninput="calcEstrategia()"></div>
+          <div class="fg"><label>Promedio deseado ($)</label><input type="number" step="any" min="0" id="est-target-avg" placeholder="Ej: 60000" oninput="calcEstrategia()"></div>
+          <div class="fg"><label>Comprando al precio de ($)</label><input type="number" step="any" min="0" id="est-entry-px" placeholder="Ej: 55000" oninput="calcEstrategia()"></div>
           <div class="fg"><label>Usando Apalancamiento</label>
             <select id="est-lev" onchange="calcEstrategia()">
               <option value="2">x2</option><option value="3">x3</option><option value="5" selected>x5</option>
@@ -363,7 +363,7 @@ input:focus,select:focus{border-color:var(--text2);}
         <div>
           <div class="est-title">🛡️ Prueba de Estrés (Sobrevivencia)</div>
           <div class="note" style="margin-bottom:15px;">Calculá tu P&L y requerimientos de margen si el precio sufre una caída severa.</div>
-          <div class="fg"><label>Simular caída a ($)</label><input type="number" id="est-drop-px" placeholder="Ej: 40000" oninput="calcEstrategia()"></div>
+          <div class="fg"><label>Simular caída a ($)</label><input type="number" step="any" min="0" id="est-drop-px" placeholder="Ej: 40000" oninput="calcEstrategia()"></div>
         </div>
         <div class="result-box" id="res-supervivencia">Esperando escenario...</div>
       </div>
@@ -372,7 +372,7 @@ input:focus,select:focus{border-color:var(--text2);}
         <div>
           <div class="est-title">📈 Simulador de Ganancia (Take Profit)</div>
           <div class="note" style="margin-bottom:15px;">Proyectá tus retornos absolutos y ROI si el precio alcanza tu objetivo.</div>
-          <div class="fg"><label>Simular subida a ($)</label><input type="number" id="est-tp-px" placeholder="Ej: 90000" oninput="calcEstrategia()"></div>
+          <div class="fg"><label>Simular subida a ($)</label><input type="number" step="any" min="0" id="est-tp-px" placeholder="Ej: 90000" oninput="calcEstrategia()"></div>
         </div>
         <div class="result-box" id="res-tp">Ingresá precio objetivo.</div>
       </div>
@@ -381,7 +381,7 @@ input:focus,select:focus{border-color:var(--text2);}
         <div>
           <div class="est-title">💰 Inyección de Margen de Emergencia</div>
           <div class="note" style="margin-bottom:15px;">Verificá cómo mejora tu precio de liquidación agregando capital libre a la cuenta.</div>
-          <div class="fg"><label>Capital a inyectar (USDT)</label><input type="number" id="est-inject" placeholder="Ej: 500" oninput="calcEstrategia()"></div>
+          <div class="fg"><label>Capital a inyectar (USDT)</label><input type="number" step="any" min="0" id="est-inject" placeholder="Ej: 500" oninput="calcEstrategia()"></div>
         </div>
         <div class="result-box" id="res-inject">Ingresá el monto a inyectar.</div>
       </div>
@@ -409,7 +409,7 @@ input:focus,select:focus{border-color:var(--text2);}
   <div class="modal">
     <h3>+ Agregar Margen Libre</h3>
     <div class="note" style="margin-bottom:1.5rem;">Agrega capital a tu cuenta para aumentar el margen disponible y alejar la liquidación. Esto <strong>no</strong> abre una nueva posición en el mercado.</div>
-    <div class="fg"><label>Monto a depositar (USDT)</label><input type="number" id="cap-amount" placeholder="Ej: 500"></div>
+    <div class="fg"><label>Monto a depositar (USDT)</label><input type="number" step="any" min="0" id="cap-amount" placeholder="Ej: 500"></div>
     <div class="fg"><label>Fecha del depósito</label><input type="date" id="cap-date"></div>
     <div class="fg"><label>Nota (opcional)</label><input type="text" id="cap-note" placeholder="Ej: Refuerzo por volatilidad"></div>
     <div class="modal-footer">
@@ -438,9 +438,9 @@ input:focus,select:focus{border-color:var(--text2);}
     
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:15px;">
       <div class="fg"><label>Fecha</label><input type="date" id="inp-date"></div>
-      <div class="fg"><label>Margen Utilizado (USDT)</label><input type="number" id="inp-capital" placeholder="200" oninput="autoCalcLev()"></div>
-      <div class="fg"><label>Tamaño Posición (USDT)</label><input type="number" id="inp-position" placeholder="1000" oninput="autoCalcLev()"></div>
-      <div class="fg"><label>Precio Entrada BTC ($)</label><input type="number" id="inp-entry" placeholder="65000"></div>
+      <div class="fg"><label>Margen Utilizado (USDT)</label><input type="number" step="any" min="0" id="inp-capital" placeholder="200" oninput="autoCalcLev()"></div>
+      <div class="fg"><label>Tamaño Posición (USDT)</label><input type="number" step="any" min="0" id="inp-position" placeholder="1000" oninput="autoCalcLev()"></div>
+      <div class="fg"><label>Precio Entrada BTC ($)</label><input type="number" step="any" min="0" id="inp-entry" placeholder="65000"></div>
       <div class="fg"><label>Apalancamiento (Calculado)</label><input type="text" id="inp-lev-display" value="0x" readonly style="color:var(--text);font-weight:600;background:var(--bg3);border:1px solid var(--border);"></div>
     </div>
     
@@ -515,9 +515,8 @@ let btcPrice=null;
 let activeTab='trades';
 let editingId=null;
 let selectedCapitalType='existing';
-let btcOhlcv=[];
 let indicators={ema20:true,ema50:true,ema200:true};
-let currentTf='1w';
+let currentTf='1w'; 
 
 // Gráficos Estructurales
 let lwChart=null;
@@ -629,6 +628,14 @@ function selectCapitalType(type){
   }else{
     note.innerHTML=`<span style="color:var(--green); font-weight:600;">✓ Nuevo Depósito:</span> Sumará colateral fresco y se asignará directo a la cuenta.`;
   }
+}
+
+// NUEVA FUNCIÓN AGREGADA
+function openCapitalModal(){
+  document.getElementById('cap-amount').value = '';
+  document.getElementById('cap-note').value = '';
+  document.getElementById('cap-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('modal-capital').classList.add('open');
 }
 
 async function saveCapital(){
@@ -754,12 +761,12 @@ function render(){
   let tagsHtml=trades.slice(0,3).map(t=>`<span class="tag ${t.leverage<=5?'tag-green':t.leverage<=10?'tag-amber':'tag-red'}">x${Number((t.position/(t.capital||1)).toFixed(1))} · ${f(t.position)}</span>`).join('');
   document.getElementById('lev-tags').innerHTML=tagsHtml||'<span class="note">Pool Inactivo</span>';
 
-  // ── RECALIBRACIÓN DEL DESLIZADOR (SIMULADOR DE CAÍDA DE PRECIO DE BTC) ──
+  // ── RECALIBRACIÓN DEL DESLIZADOR ──
   const slInput=document.getElementById('sl-pct');
-  const pnlPctVal=parseInt(slInput.value); // pnlPctVal representa el % de caída de BTC (-1 a -100)
+  const pnlPctVal=parseInt(slInput.value); 
   const btcDropPct=Math.abs(pnlPctVal)/100;
-  const slPx=pos>0?avg*(1-btcDropPct):0;   // El precio cae linealmente hasta 0 cuando llega a -100%
-  const slLoss=pos*btcDropPct;              // Pérdida nominal basada en la posición apalancada
+  const slPx=pos>0?avg*(1-btcDropPct):0;  
+  const slLoss=pos*btcDropPct;              
   
   document.getElementById('sl-pct-out').textContent=pnlPctVal+'%';
   document.getElementById('c-sl').textContent=pos>0?f(slPx):'$0';
@@ -1137,6 +1144,7 @@ function calcEstrategia(){
   }
 }
 
+// NUEVAS FUNCIONES DE API SEPARADAS Y LIMPIAS
 async function fetchPrice(){
   try{
     const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
@@ -1145,15 +1153,23 @@ async function fetchPrice(){
     document.getElementById('btc-txt').textContent='$'+Math.round(btcPrice).toLocaleString('en-US');
     document.getElementById('btc-btn').classList.add('live');
     document.getElementById('m-btc').textContent=f(btcPrice);
-    
-    const rHist=await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=250`);
-    btcOhlcv=await rHist.json();
-    if(activeTab === 'grafico') initBTCChart();
-  }catch{ document.getElementById('btc-txt').textContent='Error API'; }
+  }catch{ 
+    document.getElementById('btc-txt').textContent='Error API'; 
+  }
   render();
 }
 
-async function fetchOHLCV(tf){ return btcOhlcv.map(k=>({ time:Math.floor(k[0]/1000),open:parseFloat(k[1]),high:parseFloat(k[2]),low:parseFloat(k[3]),close:parseFloat(k[4]) })); }
+async function fetchOHLCV(tf) { 
+  try {
+    // Solicitud dinámica que usa la variable "tf" que se le envíe (1d, 1w, 1M)
+    const rHist = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${tf}&limit=250`);
+    const data = await rHist.json();
+    return data.map(k=>({ time:Math.floor(k[0]/1000),open:parseFloat(k[1]),high:parseFloat(k[2]),low:parseFloat(k[3]),close:parseFloat(k[4]) }));
+  } catch (error) {
+    console.error("Error obteniendo velas de Binance", error);
+    return [];
+  }
+}
 
 function calcEMA(closes,period){
   const k=2/(period+1); const ema=[];
@@ -1165,17 +1181,21 @@ function calcEMA(closes,period){
   return ema;
 }
 
-function changeTimeframe(tf, btn){
+// CORRECCIÓN DEL SELECTOR DE TIEMPO
+async function changeTimeframe(tf, btn){
   currentTf = tf;
   document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('on'));
   if(btn) btn.classList.add('on');
-  if(activeTab === 'grafico') initBTCChart();
+  if(activeTab === 'grafico') await initBTCChart();
 }
 
 async function initBTCChart(){
   const container=document.getElementById('btc-chart'); if(!container) return;
   container.innerHTML=''; lwChart=null;
-  const ohlcv=await fetchOHLCV(currentTf); if(!ohlcv.length) return;
+  
+  // Ahora espera dinámicamente los datos de la nueva temporalidad
+  const ohlcv = await fetchOHLCV(currentTf); 
+  if(!ohlcv.length) return;
   const closes=ohlcv.map(c=>c.close);
 
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
@@ -1209,6 +1229,14 @@ async function initBTCChart(){
   }
   lwChart.timeScale().fitContent();
 }
+
+// CORRECCIÓN RESIZE OBSERVER PARA QUE EL GRÁFICO NO SE CORTE
+window.addEventListener('resize', () => {
+  if (lwChart && activeTab === 'grafico') {
+    const container = document.getElementById('btc-chart');
+    if(container) lwChart.resize(container.offsetWidth, 450);
+  }
+});
 
 function toggleInd(key,btn){ indicators[key]=!indicators[key]; btn.classList.toggle('on',indicators[key]); if(activeTab==='grafico')initBTCChart(); }
 function openTradeModal(){ editingId=null; resetForm(); selectCapitalType('existing'); document.getElementById('modal-trade').classList.add('open'); }
