@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quantfury — BTC Risk Tracker Pro v3.8</title>
+<title>Quantfury — BTC Risk Tracker Pro v3.9</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111111'/><text x='50' y='55' font-family='monospace' font-size='38' font-weight='bold' fill='%23ffffff' text-anchor='middle' dominant-baseline='middle'>JEF</text></svg>">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,7 +26,7 @@
   --red: #ef4444; --red-dim: rgba(239, 68, 68, 0.12);
   --amber: #f59e0b; --amber-dim: rgba(245, 158, 11, 0.12);
   --blue: #ffffff; --blue-dim: rgba(255, 255, 255, 0.08);
-  --purple: #e0e0e5; --purple-dim: rgba(255, 255, 255, 0.05);
+  --purple: #a855f7; --purple-dim: rgba(168, 85, 247, 0.12);
   --grid-line: rgba(255, 255, 255, 0.02);
 }
 
@@ -38,7 +38,7 @@
   --red: #dc2626; --red-dim: rgba(220, 38, 38, 0.08);
   --amber: #d97706; --amber-dim: rgba(217, 119, 6, 0.08);
   --blue: #000000; --blue-dim: rgba(0, 0, 0, 0.06);
-  --purple: #27272a; --purple-dim: rgba(0, 0, 0, 0.04);
+  --purple: #7c3aed; --purple-dim: rgba(124, 58, 237, 0.08);
   --grid-line: rgba(0, 0, 0, 0.03);
 }
 
@@ -181,6 +181,7 @@ input:focus,select:focus{border-color:var(--text2);}
 .tag-amber{background:var(--amber-dim);color:var(--amber);}
 .tag-red{background:var(--red-dim);color:var(--red);}
 .tag-blue{background:var(--bg4);color:var(--text);}
+.tag-purple{background:var(--purple-dim);color:var(--purple);}
 </style>
 </head>
 <body>
@@ -577,12 +578,12 @@ const fN=(n,d=2)=>Number(n.toFixed(d)).toLocaleString('en-US',{minimumFractionDi
 function liqIndiv(entry,lev){return lev>0?entry*(1-1/lev):0;}
 
 function metrics(){
-  // Corrección estricta para evitar conteo doble en capital total:
-  const newTradeDeposits = trades.filter(t=>t.isNewDeposit).reduce((s,t)=>s+t.capital, 0); // Fondeos que entraron junto con un trade
-  const directDeposits = capitals.reduce((s,c)=>s+c.amount, 0); // Fondeos directos al margen libre
-  const cap = newTradeDeposits + directDeposits; // Capital total físico ingresado a la cuenta
+  const directDeposits = capitals.reduce((s,c)=>s+c.amount, 0); // Fondeos directos
   
-  // Capital utilizado estrictamente en operaciones (sin importar si vino de margen libre o nuevo)
+  // SOLUCIÓN RETROCOMPATIBLE: El capital total de la cuenta incluye depósitos directos + trades históricos o nuevos depósitos
+  // Los nuevos trades de tipo "Margen Libre" tendrán explicitamente .drawnFromFree === true y NO sumarán al colateral base.
+  const cap = directDeposits + trades.reduce((s,t) => s + (t.drawnFromFree === true ? 0 : t.capital), 0);
+  
   const mUsed = trades.reduce((s,t)=>s+t.capital, 0);
   const mFree = Math.max(0, cap - mUsed);
 
@@ -590,11 +591,9 @@ function metrics(){
   const sumPosOverEntry=trades.reduce((s,t)=>s+t.position/t.entry,0);
   const avg=sumPosOverEntry>0?pos/sumPosOverEntry:0;
   
-  // Apalancamiento Global (Posición / Fondeo Total) vs Apalancamiento Puro (Posición / Capital Bloqueado)
   const lev = cap>0 ? pos/cap : 0;
   const levTradesOnly = mUsed>0 ? pos/mUsed : 0; 
   
-  // Liquidación Global (Cross Margin) vs Liquidación Exclusiva (Isolated)
   const liq=sumPosOverEntry>0?(pos-cap)/sumPosOverEntry:0;
   const liqTradesOnly=sumPosOverEntry>0?(pos-mUsed)/sumPosOverEntry:0;
   
@@ -681,15 +680,15 @@ async function saveTrade(){
   if(!date||isNaN(capital)||capital<=0||isNaN(position)||position<=0||isNaN(entry)||entry<=0)
     return alert('Completá los campos operativos obligatorios.');
     
-  const isNewDeposit=selectedCapitalType==='new';
-  const leverage= position/capital;
+  const drawnFromFree = selectedCapitalType === 'existing';
+  const leverage = position / capital;
 
   if(editingId){
     const idx=trades.findIndex(t=>t.id===editingId);
-    if(idx!==-1)trades[idx]={...trades[idx],date,capital,position,entry,leverage,isNewDeposit};
+    if(idx!==-1)trades[idx]={...trades[idx],date,capital,position,entry,leverage,drawnFromFree};
     editingId=null;
   }else{
-    trades.push({id:Date.now(),date,capital,position,entry,leverage,isNewDeposit});
+    trades.push({id:Date.now(),date,capital,position,entry,leverage,drawnFromFree});
   }
   await pushToDatabase();
   closeModal('modal-trade');
@@ -706,7 +705,7 @@ function editTrade(id){
   document.getElementById('inp-position').value=t.position;
   document.getElementById('inp-entry').value=t.entry;
   autoCalcLev();
-  selectCapitalType(t.isNewDeposit?'new':'existing');
+  selectCapitalType(t.drawnFromFree === true ? 'existing' : 'new');
   document.getElementById('modal-trade').classList.add('open');
 }
 
@@ -809,11 +808,15 @@ function renderTrades(){
     const pnl=btcPrice!=null?((btcPrice-t.entry)/t.entry)*t.position:null;
     const pnlStyleColor = pnl == null ? 'var(--text3)' : (pnl >= 0 ? 'var(--green)' : 'var(--red)');
     
+    // Identificación de etiquetas inteligente e histórica para evitar distorsiones visuales
+    const tagLabel = t.drawnFromFree === true ? 'Mg. Libre' : (t.drawnFromFree === false ? 'Nuevo Dep.' : 'Histórico');
+    const tagClass = t.drawnFromFree === true ? 'tag-blue' : (t.drawnFromFree === false ? 'tag-green' : 'tag-purple');
+
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td style="color:var(--text)">${t.date}</td>
       <td>${f(t.capital)}</td>
-      <td><span class="tag ${t.isNewDeposit?'tag-green':'tag-blue'}">${t.isNewDeposit?'Nuevo Dep.':'Mg. Libre'}</span></td>
+      <td><span class="tag ${tagClass}">${tagLabel}</span></td>
       <td style="color:var(--text);font-weight:500;">${f(t.position)}</td>
       <td><span class="tag">x${Number(t.leverage.toFixed(1))}</span></td>
       <td style="color:var(--text)">${f(t.entry)}</td>
@@ -844,7 +847,7 @@ function renderTrades(){
 function renderCapitalHistory(){
   const tbody=document.getElementById('capital-body');if(!tbody)return;
   const all=[
-    ...trades.filter(t=>t.isNewDeposit).map(t=>({id:t.id,date:t.date,type:'Depósito vía Trade',amount:t.capital,note:`Apertura exposición @ ${f(t.entry)}`,isTrade:true})),
+    ...trades.filter(t=>t.drawnFromFree !== true).map(t=>({id:t.id,date:t.date,type: t.drawnFromFree === false ? 'Depósito vía Trade' : 'Depósito Histórico',amount:t.capital,note:`Apertura exposición @ ${f(t.entry)}`,isTrade:true})),
     ...capitals.map(c=>({id:c.id,date:c.date,type:'Depósito Directo',amount:c.amount,note:c.note,isTrade:false}))
   ].sort((a,b)=>a.date.localeCompare(b.date));
 
@@ -866,7 +869,7 @@ function renderCapitalHistoryChart() {
   if (capHistInst) capHistInst.destroy();
 
   const movements = [
-    ...trades.filter(t=>t.isNewDeposit).map(t=>({date:t.date, type:'trade', val:t.capital})),
+    ...trades.filter(t=>t.drawnFromFree !== true).map(t=>({date:t.date, type:'trade', val:t.capital})),
     ...capitals.map(c=>({date:c.date, type:'direct', val:c.amount}))
   ].sort((a,b)=>a.date.localeCompare(b.date));
 
@@ -1094,7 +1097,6 @@ function calcEstrategia(){
   if(!trades.length&&!capitals.length)return;
   const{cap,pos,avg,liq}=metrics();
 
-  // Simulador DCA Múltiple
   const dcaCap = parseFloat(document.getElementById('est-dca-cap').value);
   const dcaLev = parseFloat(document.getElementById('est-dca-lev').value) || 5;
   const resProm = document.getElementById('res-promedio');
@@ -1105,13 +1107,13 @@ function calcEstrategia(){
     resProm.innerHTML = 'Ingresá el capital que querés inyectar para ver escenarios.';
   } else {
     const newPos = dcaCap * dcaLev;
-    const ref = btcPrice || avg; // Tomamos el precio actual de BTC como referencia, o el promedio
-    const scenarios = [0, 0.05, 0.10, 0.20]; // Comprar al precio de ahora, -5%, -10%, y -20%
+    const ref = btcPrice || avg; 
+    const scenarios = [0, 0.05, 0.10, 0.20]; 
     
     let html = `<div style="margin-bottom:8px;">Con <strong>${f(dcaCap)}</strong> a <strong>${dcaLev}x</strong> comprás <strong>${f(newPos)}</strong> de posición.</div>`;
     html += `<table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
                <thead>
-                 <tr style="border-bottom:1px solid var(--border); color:var(--text3);">
+                 <tr style="border-bottom:1px solid var(--border); color:var(--text3); text-transform:uppercase; letter-spacing:0.05em;">
                    <th style="padding:4px; text-align:left;">Si comprás a</th>
                    <th style="padding:4px; text-align:left;">Nuevo Promedio</th>
                    <th style="padding:4px; text-align:left;">Nueva Liq.</th>
@@ -1124,7 +1126,7 @@ function calcEstrategia(){
         const sumPoE = trades.reduce((s,t)=>s+t.position/t.entry,0);
         const newSumPoE = sumPoE + (newPos / buyPx);
         const finalAvg = (pos + newPos) / newSumPoE;
-        const newCapTotal = cap + dcaCap; // Tu capital total sube con la inyección
+        const newCapTotal = cap + dcaCap; 
         const newLiq = (pos + newPos - newCapTotal) / newSumPoE;
 
         html += `<tr style="border-bottom:1px solid var(--border2);">
@@ -1137,7 +1139,6 @@ function calcEstrategia(){
     resProm.innerHTML = html;
   }
 
-  // Las otras calculadoras
   const dropStr = document.getElementById('est-drop-px').value;
   const drop = parseFloat(dropStr);
   const resSurv=document.getElementById('res-supervivencia');
