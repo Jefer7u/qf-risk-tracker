@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quantfury — BTC Risk Tracker Pro v3.7</title>
+<title>Quantfury — BTC Risk Tracker Pro v3.8</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111111'/><text x='50' y='55' font-family='monospace' font-size='38' font-weight='bold' fill='%23ffffff' text-anchor='middle' dominant-baseline='middle'>JEF</text></svg>">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -346,18 +346,17 @@ input:focus,select:focus{border-color:var(--text2);}
     <div class="est-grid">
       <div class="est-section">
         <div>
-          <div class="est-title">🎯 Proyección de DCA Objetivo</div>
-          <div class="note" style="margin-bottom:15px;">¿Cuánto capital necesitás inyectar para llevar tu promedio a un precio específico?</div>
-          <div class="fg"><label>Promedio deseado ($)</label><input type="number" step="any" min="0" id="est-target-avg" placeholder="Ej: 60000" oninput="calcEstrategia()"></div>
-          <div class="fg"><label>Comprando al precio de ($)</label><input type="number" step="any" min="0" id="est-entry-px" placeholder="Ej: 55000" oninput="calcEstrategia()"></div>
+          <div class="est-title">🎯 Simulador de DCA Múltiple</div>
+          <div class="note" style="margin-bottom:15px;">Evaluá cómo mejora tu promedio inyectando una cantidad fija de capital a diferentes escenarios de precio.</div>
+          <div class="fg"><label>Capital dispuesto a inyectar (USDT)</label><input type="number" step="any" min="0" id="est-dca-cap" placeholder="Ej: 500" oninput="calcEstrategia()"></div>
           <div class="fg"><label>Usando Apalancamiento</label>
-            <select id="est-lev" onchange="calcEstrategia()">
+            <select id="est-dca-lev" onchange="calcEstrategia()">
               <option value="2">x2</option><option value="3">x3</option><option value="5" selected>x5</option>
               <option value="7">x7</option><option value="10">x10</option>
             </select>
           </div>
         </div>
-        <div class="result-box" id="res-promedio">Ingresá los datos para simular.</div>
+        <div class="result-box" id="res-promedio">Ingresá los datos para simular escenarios.</div>
       </div>
       
       <div class="est-section">
@@ -381,7 +380,7 @@ input:focus,select:focus{border-color:var(--text2);}
       <div class="est-section">
         <div>
           <div class="est-title">💰 Inyección de Margen de Emergencia</div>
-          <div class="note" style="margin-bottom:15px;">Verificá cómo mejora tu precio de liquidación agregando capital libre a la cuenta.</div>
+          <div class="note" style="margin-bottom:15px;">Verificá cómo alejas la liquidación inyectando capital como respaldo (sin comprar posición).</div>
           <div class="fg"><label>Capital a inyectar (USDT)</label><input type="number" step="any" min="0" id="est-inject" placeholder="Ej: 500" oninput="calcEstrategia()"></div>
         </div>
         <div class="result-box" id="res-inject">Ingresá el monto a inyectar.</div>
@@ -516,7 +515,7 @@ let btcPrice=null;
 let activeTab='trades';
 let editingId=null;
 let selectedCapitalType='existing';
-let indicators={ema20:true,ema50:true,ema200:true,sr:true}; // Soportes/Resistencias activados
+let indicators={ema20:true,ema50:true,ema200:true,sr:true};
 let currentTf='1w'; 
 
 // Gráficos Estructurales
@@ -578,27 +577,29 @@ const fN=(n,d=2)=>Number(n.toFixed(d)).toLocaleString('en-US',{minimumFractionDi
 function liqIndiv(entry,lev){return lev>0?entry*(1-1/lev):0;}
 
 function metrics(){
-  const tradeCap=trades.reduce((s,t)=>s+t.capital,0); // Capital total usado en posiciones
-  const extraCap=capitals.reduce((s,c)=>s+c.amount,0); // Margen libre extra depositado
-  const cap=tradeCap+extraCap; // Fondo global (Cross Margin Pool)
-  const pos=trades.reduce((s,t)=>s+t.position,0);
+  // Corrección estricta para evitar conteo doble en capital total:
+  const newTradeDeposits = trades.filter(t=>t.isNewDeposit).reduce((s,t)=>s+t.capital, 0); // Fondeos que entraron junto con un trade
+  const directDeposits = capitals.reduce((s,c)=>s+c.amount, 0); // Fondeos directos al margen libre
+  const cap = newTradeDeposits + directDeposits; // Capital total físico ingresado a la cuenta
   
-  let sumPosOverEntry=trades.reduce((s,t)=>s+t.position/t.entry,0);
+  // Capital utilizado estrictamente en operaciones (sin importar si vino de margen libre o nuevo)
+  const mUsed = trades.reduce((s,t)=>s+t.capital, 0);
+  const mFree = Math.max(0, cap - mUsed);
+
+  const pos=trades.reduce((s,t)=>s+t.position,0);
+  const sumPosOverEntry=trades.reduce((s,t)=>s+t.position/t.entry,0);
   const avg=sumPosOverEntry>0?pos/sumPosOverEntry:0;
   
-  // Apalancamiento Global vs Apalancamiento Puro (Solo Trades)
-  const lev=cap>0?pos/cap:0;
-  const levTradesOnly = tradeCap>0 ? pos/tradeCap : 0; 
+  // Apalancamiento Global (Posición / Fondeo Total) vs Apalancamiento Puro (Posición / Capital Bloqueado)
+  const lev = cap>0 ? pos/cap : 0;
+  const levTradesOnly = mUsed>0 ? pos/mUsed : 0; 
   
-  // Liquidación Global vs Liquidación Exclusiva (Solo Trades)
+  // Liquidación Global (Cross Margin) vs Liquidación Exclusiva (Isolated)
   const liq=sumPosOverEntry>0?(pos-cap)/sumPosOverEntry:0;
-  const liqTradesOnly=sumPosOverEntry>0?(pos-tradeCap)/sumPosOverEntry:0;
-  
-  const mUsed=trades.reduce((s,t)=>s+t.position/t.leverage,0);
-  const mFree=Math.max(0, cap-mUsed);
+  const liqTradesOnly=sumPosOverEntry>0?(pos-mUsed)/sumPosOverEntry:0;
   
   return{
-      cap, tradeCap, extraCap, pos, avg, lev, levTradesOnly, 
+      cap, tradeCap: mUsed, extraCap: directDeposits, pos, avg, lev, levTradesOnly, 
       liq: Math.max(0, liq), liqTradesOnly: Math.max(0, liqTradesOnly), mUsed, mFree
   };
 }
@@ -677,19 +678,18 @@ async function saveTrade(){
   const capital=parseFloat(document.getElementById('inp-capital').value);
   const position=parseFloat(document.getElementById('inp-position').value);
   const entry=parseFloat(document.getElementById('inp-entry').value);
-  if(!date||isNaN(position)||position<=0||isNaN(entry)||entry<=0)
+  if(!date||isNaN(capital)||capital<=0||isNaN(position)||position<=0||isNaN(entry)||entry<=0)
     return alert('Completá los campos operativos obligatorios.');
     
   const isNewDeposit=selectedCapitalType==='new';
-  const realCapital=isNewDeposit ? capital : 0;
-  const leverage=isNewDeposit ? (realCapital>0?position/realCapital:5) : 5;
+  const leverage= position/capital;
 
   if(editingId){
     const idx=trades.findIndex(t=>t.id===editingId);
-    if(idx!==-1)trades[idx]={...trades[idx],date,capital:realCapital,position,entry,leverage,isNewDeposit};
+    if(idx!==-1)trades[idx]={...trades[idx],date,capital,position,entry,leverage,isNewDeposit};
     editingId=null;
   }else{
-    trades.push({id:Date.now(),date,capital:realCapital,position,entry,leverage,isNewDeposit});
+    trades.push({id:Date.now(),date,capital,position,entry,leverage,isNewDeposit});
   }
   await pushToDatabase();
   closeModal('modal-trade');
@@ -805,20 +805,19 @@ function renderTrades(){
   if(!trades.length){ tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:3rem;">Pool libre de trades activos.</td></tr>'; tfoot.innerHTML=''; return; }
   
   trades.forEach(t=>{
-    const currentLev = t.capital>0?t.position/t.capital:5;
-    const liq=liqIndiv(t.entry,currentLev);
+    const liq=liqIndiv(t.entry, t.leverage);
     const pnl=btcPrice!=null?((btcPrice-t.entry)/t.entry)*t.position:null;
     const pnlStyleColor = pnl == null ? 'var(--text3)' : (pnl >= 0 ? 'var(--green)' : 'var(--red)');
     
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td style="color:var(--text)">${t.date}</td>
-      <td>${t.capital>0?f(t.capital):'—'}</td>
+      <td>${f(t.capital)}</td>
       <td><span class="tag ${t.isNewDeposit?'tag-green':'tag-blue'}">${t.isNewDeposit?'Nuevo Dep.':'Mg. Libre'}</span></td>
       <td style="color:var(--text);font-weight:500;">${f(t.position)}</td>
-      <td><span class="tag">x${Number(currentLev.toFixed(1))}</span></td>
+      <td><span class="tag">x${Number(t.leverage.toFixed(1))}</span></td>
       <td style="color:var(--text)">${f(t.entry)}</td>
-      <td style="color:var(--red)">${t.capital>0?f(liq):'Cross Pool'}</td>
+      <td style="color:var(--red)">${f(liq)}</td>
       <td style="color:${pnlStyleColor}; font-weight:600;">${pnl==null?'—':(pnl>=0?'+':'')+f(pnl)}</td>
       <td>
         <button class="btn-del" onclick="editTrade(${t.id})">✎</button>
@@ -1090,26 +1089,55 @@ function renderMiniCharts(){
 
 function destroyChart(c){if(c)try{c.destroy();}catch{}}
 
-// ── ESTRATEGIA CALCULADORA ──
+// ── ESTRATEGIA CALCULADORA (ACTUALIZADA A SIMULADOR MÚLTIPLE) ──
 function calcEstrategia(){
   if(!trades.length&&!capitals.length)return;
   const{cap,pos,avg,liq}=metrics();
 
-  const targ=parseFloat(document.getElementById('est-target-avg').value);
-  const entr=parseFloat(document.getElementById('est-entry-px').value);
-  const l=parseFloat(document.getElementById('est-lev').value)||5;
-  const resProm=document.getElementById('res-promedio');
-  if(pos===0){resProm.innerHTML='Necesitás tener un trade activo.';}
-  else if(!targ||!entr){resProm.innerHTML='Completá los campos superiores.';}
-  else if(targ>=avg){resProm.innerHTML=`<span style="color:var(--red)">El objetivo debe ser menor al promedio (${f(avg)}).</span>`;}
-  else if(entr>=targ){resProm.innerHTML=`<span style="color:var(--red)">Debes comprar por debajo del objetivo.</span>`;}
-  else{
-    const newPos=pos*(avg-targ)/(targ-entr);
-    const newCap=newPos/l;
-    const newLiq=pos>0?(pos+newPos-(cap+newCap))/(trades.reduce((s,t)=>s+t.position/t.entry,0)+newPos/entr):0;
-    resProm.innerHTML=`Para bajar el promedio a ${f(targ)}:<br>Comprar posición de: <strong>${f(newPos)}</strong><br>Inyección requerida: <strong style="color:var(--green)">${f(newCap)} USDT (x${l})</strong><br>Nueva Liquidación: <strong style="color:var(--red)">${f(newLiq)}</strong>`;
+  // Simulador DCA Múltiple
+  const dcaCap = parseFloat(document.getElementById('est-dca-cap').value);
+  const dcaLev = parseFloat(document.getElementById('est-dca-lev').value) || 5;
+  const resProm = document.getElementById('res-promedio');
+
+  if (pos === 0) {
+    resProm.innerHTML = 'Necesitás tener un trade activo.';
+  } else if (!dcaCap || dcaCap <= 0) {
+    resProm.innerHTML = 'Ingresá el capital que querés inyectar para ver escenarios.';
+  } else {
+    const newPos = dcaCap * dcaLev;
+    const ref = btcPrice || avg; // Tomamos el precio actual de BTC como referencia, o el promedio
+    const scenarios = [0, 0.05, 0.10, 0.20]; // Comprar al precio de ahora, -5%, -10%, y -20%
+    
+    let html = `<div style="margin-bottom:8px;">Con <strong>${f(dcaCap)}</strong> a <strong>${dcaLev}x</strong> comprás <strong>${f(newPos)}</strong> de posición.</div>`;
+    html += `<table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+               <thead>
+                 <tr style="border-bottom:1px solid var(--border); color:var(--text3);">
+                   <th style="padding:4px; text-align:left;">Si comprás a</th>
+                   <th style="padding:4px; text-align:left;">Nuevo Promedio</th>
+                   <th style="padding:4px; text-align:left;">Nueva Liq.</th>
+                 </tr>
+               </thead>
+               <tbody>`;
+    
+    scenarios.forEach(drop => {
+        const buyPx = ref * (1 - drop);
+        const sumPoE = trades.reduce((s,t)=>s+t.position/t.entry,0);
+        const newSumPoE = sumPoE + (newPos / buyPx);
+        const finalAvg = (pos + newPos) / newSumPoE;
+        const newCapTotal = cap + dcaCap; // Tu capital total sube con la inyección
+        const newLiq = (pos + newPos - newCapTotal) / newSumPoE;
+
+        html += `<tr style="border-bottom:1px solid var(--border2);">
+                   <td style="padding:6px; color:var(--text);">${f(buyPx)} <span style="color:var(--text3); font-size:0.65rem;">${drop === 0 ? '(Hoy)' : '(-'+(drop*100)+'%)'}</span></td>
+                   <td style="padding:6px; color:var(--amber); font-weight:600;">${f(finalAvg)}</td>
+                   <td style="padding:6px; color:var(--red); font-weight:600;">${f(Math.max(0, newLiq))}</td>
+                 </tr>`;
+    });
+    html += `</tbody></table>`;
+    resProm.innerHTML = html;
   }
 
+  // Las otras calculadoras
   const dropStr = document.getElementById('est-drop-px').value;
   const drop = parseFloat(dropStr);
   const resSurv=document.getElementById('res-supervivencia');
@@ -1185,7 +1213,6 @@ function calcEMA(closes,period){
   return ema;
 }
 
-// NUEVA FUNCIÓN PARA CALCULAR SOPORTES Y RESISTENCIAS (Canales Donchian de 20 periodos)
 function calcSR(ohlcv, period=20) {
   const res = []; const sup = [];
   for(let i=0; i<ohlcv.length; i++) {
@@ -1245,15 +1272,10 @@ async function initBTCChart(){
     lwChart.addLineSeries({color:'#8b5cf6',lineWidth:1.5,priceLineVisible:false,lastValueVisible:false}).setData(ohlcv.map((c,i)=>ema200[i]!=null?{time:c.time,value:ema200[i]}:null).filter(Boolean));
   }
   
-  // INYECCIÓN DE INDICADOR DE SOPORTE Y RESISTENCIA
   if(indicators.sr){
     const {sup, res} = calcSR(ohlcv, 20);
-    
-    // Línea de Resistencia (Roja, estilo dashed: 2)
     const resLine = lwChart.addLineSeries({color:'rgba(239, 68, 68, 0.8)', lineWidth:1, lineStyle: 2, priceLineVisible:false, lastValueVisible:false});
     resLine.setData(ohlcv.map((c,i)=>res[i]!=null?{time:c.time,value:res[i]}:null).filter(Boolean));
-    
-    // Línea de Soporte (Verde, estilo dashed: 2)
     const supLine = lwChart.addLineSeries({color:'rgba(16, 185, 129, 0.8)', lineWidth:1, lineStyle: 2, priceLineVisible:false, lastValueVisible:false});
     supLine.setData(ohlcv.map((c,i)=>sup[i]!=null?{time:c.time,value:sup[i]}:null).filter(Boolean));
   }
